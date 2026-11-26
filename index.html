@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Seguimiento de Captura SAES | IPN - ESCA Santo Tomás</title>
+    <title>Monitor de Avance de Captura SAES | IPN - ESCA Unidad Santo Tomás</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS (XLSX) para lectura y exportación de archivos Excel -->
+    <!-- SheetJS (XLSX) para lectura y exportación de archivos Excel/CSV -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Chart.js para visualizaciones interactivas -->
+    <!-- Chart.js para gráficas interactivas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <script>
@@ -24,14 +24,13 @@
                     },
                     colors: {
                         ipn: {
-                            guinda: '#6C1D45',
-                            guindaDark: '#4E1331',
-                            guindaLight: '#8E285B',
-                            guindaSoft: '#FDF2F7',
-                            oro: '#9C7A3C',
-                            oroLight: '#C5A363',
-                            oroSoft: '#FAF6F0',
-                            gris: '#333333',
+                            guinda: '#6A1B31',
+                            guindaDark: '#561224',
+                            guindaLight: '#872440',
+                            guindaSoft: '#FDF2F5',
+                            oro: '#A67C37',
+                            oroLight: '#C9A15A',
+                            oroSoft: '#FAF5EC',
                             pizarra: '#F4F6F9'
                         }
                     }
@@ -41,16 +40,15 @@
     </script>
 
     <style>
-        /* Estilos personalizados institucionales y para impresión */
         body {
             background-color: #F4F6F9;
             color: #1E293B;
         }
         .ipn-gradient {
-            background: linear-gradient(135deg, #6C1D45 0%, #4E1331 100%);
+            background: linear-gradient(135deg, #6A1B31 0%, #561224 100%);
         }
         .ipn-gold-border {
-            border-bottom: 3px solid #B38E5D;
+            border-bottom: 3px solid #C9A15A;
         }
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -68,8 +66,8 @@
             background: #94A3B8;
         }
         .drop-zone-active {
-            border-color: #6C1D45 !important;
-            background-color: #FDF2F7 !important;
+            border-color: #6A1B31 !important;
+            background-color: #FDF2F5 !important;
             transform: scale(1.01);
         }
         @media print {
@@ -91,23 +89,55 @@
     <!-- ENCABEZADO INSTITUCIONAL IPN / ESCA SANTO TOMÁS -->
     <header class="ipn-gradient text-white shadow-lg ipn-gold-border sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                    <button onclick="document.getElementById('fileInput').click()" class="inline-flex items-center gap-2 bg-ipn-oro hover:bg-[#82642F] text-white font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-lg shadow transition cursor-pointer">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white/15 border border-ipn-oroLight/50 flex items-center justify-center flex-shrink-0 font-extrabold text-sm tracking-tight text-ipn-oroLight">
+                        IPN
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h1 class="text-sm sm:text-base lg:text-lg font-extrabold tracking-tight">
+                                Monitor de Avance de Captura SAES
+                            </h1>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-ipn-oro/30 border border-ipn-oroLight/50 text-amber-100">
+                                Carga Manual
+                            </span>
+                        </div>
+                        <p class="text-[11px] sm:text-xs text-white/80">
+                            Instituto Politécnico Nacional • ESCA Unidad Santo Tomás • Seguimiento por Jefatura y Docente
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción Principales -->
+                <div class="flex flex-wrap items-center gap-2 no-print">
+                    <button type="button" onclick="document.getElementById('fileInput').click()" class="inline-flex items-center gap-2 bg-ipn-oro hover:bg-[#8E692D] text-white font-bold text-xs sm:text-sm px-3.5 py-2 rounded-lg shadow transition cursor-pointer">
                         <i class="fa-solid fa-file-excel"></i>
-                        <span>Cargar Excel / CSV</span>
+                        <span>Cargar archivo Excel</span>
                     </button>
                     <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
 
-                    <button onclick="exportCurrentViewToExcel()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Exportar vista filtrada actual a Excel (21 columnas)">
+                    <button type="button" onclick="clearLoadedDataset()" id="btnClearFile" class="hidden inline-flex items-center gap-1.5 bg-white/10 hover:bg-rose-600/80 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Limpiar archivo cargado y volver a la pantalla de carga manual">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span class="hidden sm:inline">Limpiar</span>
+                    </button>
+
+                    <button type="button" onclick="exportFilteredToExcel()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Exportar vista filtrada actual a Excel (.xlsx)">
                         <i class="fa-solid fa-download"></i>
                         <span class="hidden sm:inline">Exportar XLSX</span>
                     </button>
 
-                    <button onclick="downloadTemplateExcel()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Descargar plantilla vacía con las 21 columnas de origen.xlsx">
+                    <button type="button" onclick="downloadTemplateExcel()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Descargar plantilla vacía con las 21 columnas">
                         <i class="fa-solid fa-file-arrow-down"></i>
-                        <span class="hidden md:inline">Plantilla 21 Cols</span>
+                        <span class="hidden md:inline">Plantilla</span>
                     </button>
 
-                    <button onclick="window.print()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Imprimir o Guardar como PDF">
+                    <button type="button" onclick="openGuideModal()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Guía rápida para jefes de carrera">
+                        <i class="fa-solid fa-circle-question text-ipn-oroLight"></i>
+                        <span>Guía rápida</span>
+                    </button>
+
+                    <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Imprimir o Guardar como PDF">
                         <i class="fa-solid fa-print"></i>
                     </button>
                 </div>
@@ -115,28 +145,20 @@
         </div>
     </header>
 
-    <!-- BARRA DE CONTEXTO DE JEFATURA, MODALIDAD Y CARGA DE ARCHIVO -->
+    <!-- BARRA DE JEFATURA, MODALIDAD Y ESTADO DE ARCHIVO -->
     <section class="bg-white border-b border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-                
-                <!-- Selector Principal de Jefatura de Carrera -->
+
+                <!-- Selector de Jefatura -->
                 <div class="lg:col-span-5">
                     <label for="jefaturaSelector" class="block text-xs font-bold uppercase tracking-wider text-ipn-guinda mb-1.5 flex items-center gap-1.5">
                         <i class="fa-solid fa-user-tie"></i>
-                        <span>Jefatura de Carrera / Academia (origen.xlsx):</span>
+                        <span>Jefatura de Carrera / Academia:</span>
                     </label>
                     <div class="relative">
                         <select id="jefaturaSelector" onchange="applyFilters()" class="w-full appearance-none bg-slate-50 border-2 border-ipn-guinda/30 hover:border-ipn-guinda focus:border-ipn-guinda focus:ring-2 focus:ring-ipn-guinda/20 rounded-xl py-2.5 pl-4 pr-10 text-xs sm:text-sm font-bold text-slate-800 transition cursor-pointer">
-                            <option value="ALL">🌐 TODAS LAS JEFATURAS — Vista Global (Subdirección Académica)</option>
-                            <option value="FORMACIÓN BÁSICA">📚 FORMACIÓN BÁSICA (1.º y 2.º Semestre)</option>
-                            <option value="CONTADOR PÚBLICO">📊 CONTADOR PÚBLICO (C / O)</option>
-                            <option value="RELACIONES COMERCIALES">📣 RELACIONES COMERCIALES (R / L)</option>
-                            <option value="NEGOCIOS INTERNACIONALES">🌎 NEGOCIOS INTERNACIONALES (N / E)</option>
-                            <option value="ADMINISTRACIÓN Y DESARROLLO EMPRESARIAL">🏢 ADMINISTRACIÓN Y DESARROLLO EMPRESARIAL (A / D)</option>
-                            <option value="NEGOCIOS DIGITALES">💻 NEGOCIOS DIGITALES (G)</option>
-                            <option value="MERCADOTECNIA DIGITAL">📱 MERCADOTECNIA DIGITAL (M)</option>
-                            <option value="COMERCIO INTERNACIONAL">🚢 COMERCIO INTERNACIONAL (I)</option>
+                            <option value="ALL">🌐 TODAS LAS JEFATURAS — Vista Global</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-ipn-guinda">
                             <i class="fa-solid fa-chevron-down text-sm"></i>
@@ -144,11 +166,11 @@
                     </div>
                 </div>
 
-                <!-- Selector Rápido de Modalidad (Regla 3er Carácter 'X' en Secuencia) -->
+                <!-- Selector de Modalidad (Regla 3er Carácter 'X' en Secuencia) -->
                 <div class="lg:col-span-3">
                     <label for="modalitySelector" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
                         <i class="fa-solid fa-laptop-file text-ipn-oro"></i>
-                        <span>Modalidad (3er Carácter Sec.):</span>
+                        <span>Modalidad (3er car. Sec.):</span>
                     </label>
                     <div class="relative">
                         <select id="modalitySelector" onchange="applyFilters()" class="w-full appearance-none bg-slate-50 border-2 border-slate-200 hover:border-ipn-oro focus:border-ipn-guinda rounded-xl py-2.5 pl-3.5 pr-9 text-xs sm:text-sm font-bold text-slate-800 transition cursor-pointer">
@@ -162,24 +184,24 @@
                     </div>
                 </div>
 
-                <!-- Zona Drag & Drop Compacta + Metadata del Archivo Cargado -->
+                <!-- Indicador de Archivo Cargado / Acceso Rápido a Carga -->
                 <div class="lg:col-span-4 no-print">
-                    <div id="dropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-slate-300 hover:border-ipn-guinda rounded-xl p-2.5 bg-slate-50/70 hover:bg-ipn-guindaSoft/40 transition-all cursor-pointer flex items-center justify-between gap-2.5">
+                    <div id="compactDropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-slate-300 hover:border-ipn-guinda rounded-xl p-2.5 bg-slate-50/70 hover:bg-ipn-guindaSoft/50 transition-all cursor-pointer flex items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2.5 min-w-0">
                             <div class="w-9 h-9 rounded-lg bg-ipn-guinda/10 text-ipn-guinda flex items-center justify-center flex-shrink-0">
                                 <i class="fa-solid fa-cloud-arrow-up text-base"></i>
                             </div>
                             <div class="min-w-0">
                                 <p id="loadedFileName" class="text-xs font-bold text-slate-800 truncate">
-                                    Base: origen.xlsx (Estructura 21 Cols)
+                                    Sin archivo cargado (Modo manual)
                                 </p>
                                 <p id="loadedFileMeta" class="text-[11px] text-slate-500 truncate">
-                                    Arrastra origen.xlsx o reporte SAES (.xlsx/.csv)
+                                    Selecciona o arrastra tu archivo .xlsx, .xls o .csv
                                 </p>
                             </div>
                         </div>
-                        <span id="periodBadge" class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-ipn-guinda text-white">
-                            20271 • Extraord.
+                        <span id="periodBadge" class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-slate-200 text-slate-700">
+                            ESPERA
                         </span>
                     </div>
                 </div>
@@ -191,310 +213,362 @@
     <!-- CONTENEDOR PRINCIPAL -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- BANNER INFORMATIVO DE CONTEXTO DE JEFATURA Y REGLA DE MODALIDAD -->
-        <div id="careerContextBanner" class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <div id="careerBannerIcon" class="w-10 h-10 rounded-lg bg-ipn-guinda text-white flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0">
-                    <i class="fa-solid fa-layer-group"></i>
+        <!-- PANTALLA INICIAL LIMPIA DE CARGA MANUAL (SE MUESTRA CUANDO NO HAY ARCHIVO CARGADO) -->
+        <section id="emptyUploadScreen" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-10">
+            <div class="max-w-3xl mx-auto text-center space-y-5">
+                <div class="w-16 h-16 rounded-2xl bg-ipn-guindaSoft text-ipn-guinda border border-ipn-guinda/20 flex items-center justify-center mx-auto text-2xl shadow-sm">
+                    <i class="fa-solid fa-file-excel"></i>
                 </div>
-                <div>
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <h2 id="careerBannerTitle" class="text-base sm:text-lg font-bold text-slate-900">Todas las Jefaturas — Vista Global</h2>
-                        <span id="modalityBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                            Escolarizada y No Escolarizada
-                        </span>
-                    </div>
-                    <p id="careerBannerSubtitle" class="text-xs text-slate-500 mt-0.5">
-                        Regla activa: Secuencias con <code class="px-1 py-0.5 bg-indigo-50 text-indigo-700 font-mono font-bold rounded">X</code> en el 3er carácter (ej. <span class="font-mono">1IXA2, 6OX1, 5RX12</span>) se clasifican como <strong>No Escolarizada</strong>.
+
+                <div class="space-y-2">
+                    <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">
+                        Carga tu archivo de avance de captura SAES
+                    </h2>
+                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        La plataforma inicia en <strong>modo de carga manual</strong>: selecciona o arrastra tu archivo Excel o CSV desde tu equipo (por ejemplo, desde <span class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-800">C:\Users\Soporte\Documents\avance captura</span>). Todo el procesamiento se realiza localmente en tu navegador.
                     </p>
                 </div>
-            </div>
-            <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/80 flex-shrink-0">
-                <i class="fa-regular fa-clock text-ipn-oro"></i>
-                <span>Corte SAES: <strong id="referenceDateLabel" class="text-slate-700">Periodo 20271</strong></span>
-            </div>
-        </div>
 
-        <!-- TABLERO DE INDICADORES EJECUTIVOS (6 KPIs) -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <!-- KPI 1: Total de Actas + Desglose Modalidad -->
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition relative overflow-hidden">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Actas</p>
-                        <h3 id="kpiTotalActas" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
-                    </div>
-                    <div class="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
-                        <i class="fa-solid fa-file-lines"></i>
+                <!-- Zona Grande de Arrastrar y Soltar -->
+                <div id="heroDropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-ipn-guinda/40 hover:border-ipn-guinda bg-slate-50/70 hover:bg-ipn-guindaSoft/40 rounded-2xl p-8 transition-all cursor-pointer group">
+                    <i class="fa-solid fa-cloud-arrow-up text-4xl text-ipn-guinda group-hover:scale-105 transition-transform mb-3"></i>
+                    <p class="text-sm sm:text-base font-bold text-slate-800">
+                        Arrastra aquí tu archivo <span class="text-ipn-guinda">.xlsx</span>, <span class="text-ipn-guinda">.xls</span> o <span class="text-ipn-guinda">.csv</span>
+                    </p>
+                    <p class="text-xs text-slate-500 mt-1">
+                        o haz clic para examinar en tu computadora
+                    </p>
+                    <div class="mt-4 inline-flex items-center gap-2 bg-ipn-guinda hover:bg-ipn-guindaDark text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow transition">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <span>Seleccionar archivo Excel / CSV</span>
                     </div>
                 </div>
-                <p id="kpiTotalActasSub" class="text-[11px] text-slate-600 font-medium mt-2">0 Esc. • 0 No Esc. [X]</p>
-            </div>
 
-            <!-- KPI 2: Avance de Alumnos Calificados -->
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition relative overflow-hidden">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-semibold text-ipn-guinda uppercase tracking-wider">Avance Alumnos</p>
-                        <h3 id="kpiAvancePct" class="text-2xl font-extrabold text-ipn-guinda mt-1">0%</h3>
+                <!-- Notas Breves de Compatibilidad y Reglas -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left pt-2">
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <div class="text-xs font-bold text-ipn-guinda flex items-center gap-1.5 mb-1">
+                            <i class="fa-solid fa-table-columns"></i>
+                            <span>21 o 17 Columnas</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600">
+                            Acepta archivos con las 21 columnas (incluyendo <span class="font-mono">clave</span>, <span class="font-mono">SEMESTRE</span>, <span class="font-mono">CARR</span> y <span class="font-mono">Jefatura</span>) o reportes SAES de 17 columnas.
+                        </p>
                     </div>
-                    <div class="w-9 h-9 rounded-lg bg-ipn-guindaSoft text-ipn-guinda flex items-center justify-center">
-                        <i class="fa-solid fa-users-viewfinder"></i>
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <div class="text-xs font-bold text-ipn-guinda flex items-center gap-1.5 mb-1">
+                            <i class="fa-solid fa-code"></i>
+                            <span>Modalidad por 'X'</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600">
+                            Si el <strong>3.er carácter</strong> de <span class="font-mono">Secuencia</span> es <span class="font-mono font-bold">X</span> (ej. <span class="font-mono">1IXA2, 5RX12</span>), se clasifica como <strong>No Escolarizada</strong>.
+                        </p>
                     </div>
-                </div>
-                <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-                    <div id="kpiAvanceBar" class="bg-ipn-guinda h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-                <p id="kpiAvanceSub" class="text-[11px] text-slate-500 mt-1.5">0 de 0 inscritos</p>
-            </div>
-
-            <!-- KPI 3: Actas Confirmadas -->
-            <div class="bg-white rounded-xl border border-emerald-200 p-4 shadow-sm hover:shadow-md transition relative overflow-hidden cursor-pointer" onclick="quickFilterByStatus('ACTA CAPTURADA Y CONFIRMADA')" title="Clic para filtrar actas confirmadas">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Confirmadas</p>
-                        <h3 id="kpiConfirmadas" class="text-2xl font-extrabold text-emerald-700 mt-1">0</h3>
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <div class="text-xs font-bold text-ipn-guinda flex items-center gap-1.5 mb-1">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span>Privacidad Local</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600">
+                            No se realiza lectura automática de rutas externas al abrir ni envío de datos a servidores externos.
+                        </p>
                     </div>
-                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                        <i class="fa-solid fa-circle-check"></i>
-                    </div>
-                </div>
-                <p id="kpiConfirmadasSub" class="text-[11px] text-emerald-700/80 mt-2">Capturadas y confirmadas</p>
-            </div>
-
-            <!-- KPI 4: Capturadas Sin Confirmar (Alerta Ámbar) -->
-            <div class="bg-white rounded-xl border border-amber-300 bg-amber-50/20 p-4 shadow-sm hover:shadow-md transition relative overflow-hidden cursor-pointer" onclick="quickFilterByStatus('ACTA CAPTURADA PERO NO CONFIRMADA')" title="Clic para filtrar actas capturadas sin confirmar">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Sin Confirmar</p>
-                        <h3 id="kpiSinConfirmar" class="text-2xl font-extrabold text-amber-600 mt-1">0</h3>
-                    </div>
-                    <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-                </div>
-                <p class="text-[11px] text-amber-800 font-medium mt-2">Falta firma/cierre docente</p>
-            </div>
-
-            <!-- KPI 5: Sin Registro / Rehabilitadas (Alerta Roja) -->
-            <div class="bg-white rounded-xl border border-rose-300 bg-rose-50/20 p-4 shadow-sm hover:shadow-md transition relative overflow-hidden cursor-pointer" onclick="quickFilterByStatus('CRITICAL')" title="Clic para filtrar actas sin registro o rehabilitadas">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Sin Registro / Rehab.</p>
-                        <h3 id="kpiSinRegistro" class="text-2xl font-extrabold text-rose-600 mt-1">0</h3>
-                    </div>
-                    <div class="w-9 h-9 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                        <i class="fa-solid fa-circle-xmark"></i>
-                    </div>
-                </div>
-                <p id="kpiSinRegistroSub" class="text-[11px] text-rose-800 font-medium mt-2">0 sin reg. • 0 rehab.</p>
-            </div>
-
-            <!-- KPI 6: Docentes con Pendientes -->
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition relative overflow-hidden cursor-pointer" onclick="togglePendingOnly()" title="Clic para ver solo docentes con pendientes">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Docentes Pend.</p>
-                        <h3 id="kpiDocentesPend" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
-                    </div>
-                    <div class="w-9 h-9 rounded-lg bg-ipn-oroSoft text-ipn-oro flex items-center justify-center">
-                        <i class="fa-solid fa-chalkboard-user"></i>
-                    </div>
-                </div>
-                <p id="kpiDocentesPendSub" class="text-[11px] text-slate-500 mt-2">De 0 docentes totales</p>
-            </div>
-        </section>
-
-        <!-- VISUALIZACIONES INTERACTIVAS (CHART.JS - 3 GRÁFICAS) -->
-        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- Gráfica 1: Distribución por Estatus_acta -->
-            <div class="lg:col-span-4 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800">Estatus de Actas</h3>
-                        <p class="text-xs text-slate-500">Clic en segmento para filtrar</p>
-                    </div>
-                    <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">Estatus_acta</span>
-                </div>
-                <div class="relative flex-grow min-h-[230px] flex items-center justify-center">
-                    <canvas id="statusChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Gráfica 2: Comparativa por Modalidad (Escolarizada vs No Escolarizada [3er car. 'X']) -->
-            <div class="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800">Por Modalidad</h3>
-                        <p class="text-xs text-slate-500">3er carácter 'X' en Secuencia</p>
-                    </div>
-                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">Sec[2]='X'</span>
-                </div>
-                <div class="relative flex-grow min-h-[230px]">
-                    <canvas id="modalityChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Gráfica 3: Comparativa Dinámica por Jefatura o Semestre -->
-            <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                    <div>
-                        <h3 id="barChartTitle" class="text-sm font-bold text-slate-800">Avance por Jefatura de Carrera</h3>
-                        <p id="barChartSubtitle" class="text-xs text-slate-500">Actas confirmadas vs. pendientes por jefatura</p>
-                    </div>
-                    <div class="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs no-print self-start">
-                        <button type="button" onclick="setSecondaryChartMode('jefatura')" id="btnChartJefatura" class="px-2.5 py-1 rounded-md font-semibold bg-white text-ipn-guinda shadow-sm transition cursor-pointer">Jefatura</button>
-                        <button type="button" onclick="setSecondaryChartMode('semestre')" id="btnChartSemestre" class="px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer">Semestre</button>
-                    </div>
-                </div>
-                <div class="relative flex-grow min-h-[230px]">
-                    <canvas id="comparisonChart"></canvas>
                 </div>
             </div>
         </section>
 
-        <!-- BARRA DE FILTROS AVANZADOS Y BÚSQUEDA -->
-        <section class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3 no-print">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-filter text-ipn-guinda"></i>
-                    <h3 class="text-sm font-bold text-slate-800">Filtros Específicos (Carrera, Semestre, Estatus y Búsqueda)</h3>
-                    <span id="activeFilterCount" class="hidden px-2 py-0.5 text-xs font-bold bg-ipn-guinda text-white rounded-full">0</span>
-                </div>
+        <!-- DASHBOARD ANALÍTICO (SE MUESTRA UNA VEZ CARGADO UN ARCHIVO) -->
+        <div id="dashboardContent" class="hidden space-y-6">
 
-                <div class="flex flex-wrap items-center gap-3">
-                    <!-- Toggle rápido: Solo pendientes -->
-                    <label class="inline-flex items-center gap-2 cursor-pointer select-none bg-amber-50 hover:bg-amber-100/80 border border-amber-200 px-3 py-1.5 rounded-lg transition">
-                        <input type="checkbox" id="filterPendingOnly" onchange="applyFilters()" class="w-4 h-4 text-ipn-guinda rounded border-amber-300 focus:ring-ipn-guinda">
-                        <span class="text-xs font-bold text-amber-900">Solo actas sin confirmar / con pendientes</span>
-                    </label>
-
-                    <button onclick="resetAllFilters()" class="text-xs font-semibold text-slate-600 hover:text-ipn-guinda underline px-2 py-1 transition cursor-pointer">
-                        Limpiar filtros
-                    </button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
-                <!-- Buscador de texto -->
-                <div class="lg:col-span-4 relative">
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            <!-- BANNER INFORMATIVO DE CONTEXTO -->
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div id="contextBannerIcon" class="w-10 h-10 rounded-lg bg-ipn-guinda text-white flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0">
+                        <i class="fa-solid fa-layer-group"></i>
                     </div>
-                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Docente, RFC, secuencia (ej. 5RX12), clave o materia..." class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h2 id="contextBannerTitle" class="text-base sm:text-lg font-bold text-slate-900">Todas las Jefaturas — Vista Global</h2>
+                            <span id="modalityContextBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                Escolarizada y No Escolarizada
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Regla activa: 3.er carácter de <code class="px-1 py-0.5 bg-indigo-50 text-indigo-700 font-mono font-bold rounded">Secuencia</code> igual a <code class="px-1 py-0.5 bg-indigo-50 text-indigo-700 font-mono font-bold rounded">X</code> = <strong>No Escolarizada</strong>; de lo contrario = <strong>Escolarizada</strong>.
+                        </p>
+                    </div>
                 </div>
-
-                <!-- Filtro Carrera / CARR -->
-                <div class="lg:col-span-3">
-                    <select id="filterCarrera" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
-                        <option value="ALL">Carrera (CARR): Todas</option>
-                    </select>
-                </div>
-
-                <!-- Filtro Semestre -->
-                <div class="lg:col-span-2">
-                    <select id="filterSemestre" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
-                        <option value="ALL">Semestre: Todos</option>
-                    </select>
-                </div>
-
-                <!-- Filtro Estatus_acta -->
-                <div class="lg:col-span-3">
-                    <select id="filterStatus" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
-                        <option value="ALL">Estatus Acta: Todos</option>
-                        <option value="ACTA CAPTURADA Y CONFIRMADA">✅ Capturada y Confirmada</option>
-                        <option value="ACTA CAPTURADA PERO NO CONFIRMADA">⚠️ Capturada pero No Confirmada</option>
-                        <option value="SIN REGISTRO">❌ Sin Registro</option>
-                        <option value="ACTA REHABILITADA Y CAPTURADA">🔄 Rehabilitada y Capturada</option>
-                        <option value="ACTA REHABILITADA">🟠 Acta Rehabilitada (Sin captura)</option>
-                        <option value="CRITICAL">🚨 Críticos (Sin Registro + Rehabilitada)</option>
-                    </select>
-                </div>
-            </div>
-        </section>
-
-        <!-- NAVEGACIÓN DE VISTAS DE ANÁLISIS (TABS) -->
-        <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <!-- Encabezado de Tabs -->
-            <div class="border-b border-slate-200 bg-slate-50/70 px-4 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="flex space-x-2" role="tablist">
-                    <button id="tabBtnDocentes" onclick="switchTab('docentes')" class="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-ipn-guinda text-ipn-guinda bg-white flex items-center gap-2 transition cursor-pointer">
-                        <i class="fa-solid fa-users-rectangle"></i>
-                        <span>Seguimiento por Docente</span>
-                        <span id="badgeCountDocentes" class="px-2 py-0.5 text-[11px] rounded-full bg-ipn-guinda text-white">0</span>
-                    </button>
-
-                    <button id="tabBtnActas" onclick="switchTab('actas')" class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-lg border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 flex items-center gap-2 transition cursor-pointer">
-                        <i class="fa-solid fa-table-list"></i>
-                        <span>Listado Plano de Actas</span>
-                        <span id="badgeCountActas" class="px-2 py-0.5 text-[11px] rounded-full bg-slate-200 text-slate-700">0</span>
-                    </button>
-                </div>
-
-                <!-- Acciones contextuales de la vista activa -->
-                <div id="docentesTabControls" class="pb-2 sm:pb-0 flex items-center gap-2 no-print">
-                    <select id="sortDocentes" onchange="renderDocentesView()" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-ipn-guinda">
-                        <option value="pendientes_desc">Ordenar: Mayor rezago primero</option>
-                        <option value="sin_confirmar_desc">Ordenar: Más actas sin confirmar</option>
-                        <option value="nombre_asc">Ordenar: Nombre (A - Z)</option>
-                        <option value="avance_asc">Ordenar: Menor % de avance</option>
-                    </select>
-                    <button onclick="expandCollapseAllDocentes(true)" class="text-xs px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-slate-700 font-medium transition cursor-pointer" title="Expandir todos los docentes">
-                        <i class="fa-solid fa-angles-down"></i>
-                    </button>
-                    <button onclick="expandCollapseAllDocentes(false)" class="text-xs px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-slate-700 font-medium transition cursor-pointer" title="Contraer todos">
-                        <i class="fa-solid fa-angles-up"></i>
-                    </button>
+                <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/80 flex-shrink-0">
+                    <i class="fa-regular fa-calendar-check text-ipn-oro"></i>
+                    <span>Corte: <strong id="periodSummaryLabel" class="text-slate-700">—</strong></span>
                 </div>
             </div>
 
-            <!-- VISTA 1: SEGUIMIENTO POR DOCENTE (ACORDEÓN AGRUPADO POR RFC Y NOMBRE) -->
-            <div id="viewDocentes" class="p-4 space-y-3">
-                <div id="docentesListContainer" class="space-y-3">
-                    <!-- Renderizado dinámico por JS -->
-                </div>
-            </div>
-
-            <!-- VISTA 2: LISTADO PLANO DE ACTAS (TABLA OPERATIVA PAGINADA Y ORDENABLE) -->
-            <div id="viewActas" class="hidden">
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="min-w-full divide-y divide-slate-200 text-xs">
-                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider">
-                            <tr>
-                                <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Jefatura')">Jefatura / Carrera <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Secuencia')">Secuencia / Modalidad <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                <th class="px-3 py-3 text-center cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('SEMESTRE')">Sem. <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Materia')">Clave / Asignatura <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Nombre')">Docente / RFC <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Fecha_limite')">Fecha Límite SAES <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Estatus_acta')">Estatus Acta <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                <th class="px-3 py-3 text-right cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Pendientes')">Alumnos (Cal/Insc) <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                            </tr>
-                        </thead>
-                        <tbody id="actasTableBody" class="bg-white divide-y divide-slate-200">
-                            <!-- Renderizado dinámico por JS -->
-                        </tbody>
-                    </table>
+            <!-- 6 TARJETAS DE KPIs -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Actas</p>
+                            <h3 id="kpiTotalActas" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+                    </div>
+                    <p id="kpiTotalActasSub" class="text-[11px] text-slate-600 font-medium mt-2">0 Esc. • 0 No Esc. [X]</p>
                 </div>
 
-                <!-- Controles de Paginación -->
-                <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 no-print">
-                    <div id="paginationInfo">Mostrando 0 a 0 de 0 actas</div>
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-ipn-guinda uppercase tracking-wider">Avance Alumnos</p>
+                            <h3 id="kpiAvancePct" class="text-2xl font-extrabold text-ipn-guinda mt-1">0%</h3>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-ipn-guindaSoft text-ipn-guinda flex items-center justify-center">
+                            <i class="fa-solid fa-users-viewfinder"></i>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div id="kpiAvanceBar" class="bg-ipn-guinda h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <p id="kpiAvanceSub" class="text-[11px] text-slate-500 mt-1.5">0 de 0 inscritos</p>
+                </div>
+
+                <div class="bg-white rounded-xl border border-emerald-200 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="quickFilterByStatus('ACTA CAPTURADA Y CONFIRMADA')" title="Clic para filtrar actas confirmadas">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Confirmadas</p>
+                            <h3 id="kpiConfirmadas" class="text-2xl font-extrabold text-emerald-700 mt-1">0</h3>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </div>
+                    <p id="kpiConfirmadasSub" class="text-[11px] text-emerald-700/80 mt-2">0% del total de actas</p>
+                </div>
+
+                <div class="bg-white rounded-xl border border-amber-300 bg-amber-50/20 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="quickFilterByStatus('ACTA CAPTURADA PERO NO CONFIRMADA')" title="Clic para filtrar actas sin confirmar">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Sin Confirmar</p>
+                            <h3 id="kpiSinConfirmar" class="text-2xl font-extrabold text-amber-600 mt-1">0</h3>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-amber-800 font-medium mt-2">Falta confirmación en SAES</p>
+                </div>
+
+                <div class="bg-white rounded-xl border border-rose-300 bg-rose-50/20 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="quickFilterByStatus('CRITICAL')" title="Clic para filtrar sin registro o rehabilitadas">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Sin Reg. / Rehab.</p>
+                            <h3 id="kpiSinRegistro" class="text-2xl font-extrabold text-rose-600 mt-1">0</h3>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+                    </div>
+                    <p id="kpiSinRegistroSub" class="text-[11px] text-rose-800 font-medium mt-2">0 sin reg. • 0 rehab.</p>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="togglePendingOnly()" title="Clic para alternar solo docentes con pendientes">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Docentes Pend.</p>
+                            <h3 id="kpiDocentesPend" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-ipn-oroSoft text-ipn-oro flex items-center justify-center">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+                    </div>
+                    <p id="kpiDocentesPendSub" class="text-[11px] text-slate-500 mt-2">De 0 docentes en vista</p>
+                </div>
+            </section>
+
+            <!-- 3 GRÁFICAS INTERACTIVAS (CHART.JS) -->
+            <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-4 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">Estatus de Actas</h3>
+                            <p class="text-xs text-slate-500">Clic en segmento para filtrar</p>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">Estatus_acta</span>
+                    </div>
+                    <div class="relative flex-grow min-h-[230px] flex items-center justify-center">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">Por Modalidad</h3>
+                            <p class="text-xs text-slate-500">3.er carácter 'X' en Secuencia</p>
+                        </div>
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">Sec[2]='X'</span>
+                    </div>
+                    <div class="relative flex-grow min-h-[230px]">
+                        <canvas id="modalityChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h3 id="barChartTitle" class="text-sm font-bold text-slate-800">Avance por Jefatura</h3>
+                            <p id="barChartSubtitle" class="text-xs text-slate-500">Actas confirmadas vs. pendientes</p>
+                        </div>
+                        <div class="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs no-print self-start">
+                            <button type="button" onclick="setSecondaryChartMode('jefatura')" id="btnChartJefatura" class="px-2.5 py-1 rounded-md font-semibold bg-white text-ipn-guinda shadow-sm transition cursor-pointer">Jefatura</button>
+                            <button type="button" onclick="setSecondaryChartMode('semestre')" id="btnChartSemestre" class="px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer">Semestre</button>
+                        </div>
+                    </div>
+                    <div class="relative flex-grow min-h-[230px]">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FILTROS AVANZADOS -->
+            <section class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3 no-print">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
-                        <select id="pageSizeSelect" onchange="changePageSize()" class="bg-white border border-slate-300 rounded-md px-2 py-1 text-xs">
-                            <option value="15">15 por página</option>
-                            <option value="30">30 por página</option>
-                            <option value="50">50 por página</option>
-                            <option value="100">100 por página</option>
-                        </select>
-                        <button id="btnPrevPage" onclick="changePage(-1)" class="px-3 py-1 bg-white border border-slate-300 rounded-md hover:bg-slate-100 disabled:opacity-50 font-medium cursor-pointer">Anterior</button>
-                        <span id="pageIndicator" class="font-bold text-slate-800 px-2">Página 1</span>
-                        <button id="btnNextPage" onclick="changePage(1)" class="px-3 py-1 bg-white border border-slate-300 rounded-md hover:bg-slate-100 disabled:opacity-50 font-medium cursor-pointer">Siguiente</button>
+                        <i class="fa-solid fa-filter text-ipn-guinda"></i>
+                        <h3 class="text-sm font-bold text-slate-800">Filtros Específicos</h3>
+                        <span id="activeFilterCount" class="hidden px-2 py-0.5 text-xs font-bold bg-ipn-guinda text-white rounded-full">0</span>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <label class="inline-flex items-center gap-2 cursor-pointer select-none bg-amber-50 hover:bg-amber-100/80 border border-amber-200 px-3 py-1.5 rounded-lg transition">
+                            <input type="checkbox" id="filterPendingOnly" onchange="applyFilters()" class="w-4 h-4 text-ipn-guinda rounded border-amber-300 focus:ring-ipn-guinda">
+                            <span class="text-xs font-bold text-amber-900">Solo actas sin confirmar / con pendientes</span>
+                        </label>
+
+                        <button type="button" onclick="resetAllFilters()" class="text-xs font-semibold text-slate-600 hover:text-ipn-guinda underline px-2 py-1 transition cursor-pointer">
+                            Limpiar filtros
+                        </button>
                     </div>
                 </div>
-            </div>
-        </section>
 
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                    <div class="lg:col-span-4 relative">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </div>
+                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Docente, RFC, secuencia (ej. 5RX12), clave o materia..." class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                    </div>
+
+                    <div class="lg:col-span-3">
+                        <select id="filterCarrera" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                            <option value="ALL">Carrera: Todas</option>
+                        </select>
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <select id="filterPlan" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                            <option value="ALL">Plan: Todos</option>
+                        </select>
+                    </div>
+
+                    <div class="lg:col-span-1">
+                        <select id="filterSemestre" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                            <option value="ALL">Sem.</option>
+                        </select>
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <select id="filterStatus" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                            <option value="ALL">Estatus: Todos</option>
+                            <option value="ACTA CAPTURADA Y CONFIRMADA">✅ Confirmada</option>
+                            <option value="ACTA CAPTURADA PERO NO CONFIRMADA">⚠️ Sin Confirmar</option>
+                            <option value="SIN REGISTRO">❌ Sin Registro</option>
+                            <option value="ACTA REHABILITADA Y CAPTURADA">🔄 Rehab. y Capturada</option>
+                            <option value="ACTA REHABILITADA">🟠 Rehabilitada</option>
+                            <option value="CRITICAL">🚨 Críticos</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TABS DE ANÁLISIS: POR DOCENTE Y LISTADO PLANO DE ACTAS -->
+            <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="border-b border-slate-200 bg-slate-50/70 px-4 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex space-x-2" role="tablist">
+                        <button type="button" id="tabBtnDocentes" onclick="switchTab('docentes')" class="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-ipn-guinda text-ipn-guinda bg-white flex items-center gap-2 transition cursor-pointer">
+                            <i class="fa-solid fa-users-rectangle"></i>
+                            <span>Por Docente</span>
+                            <span id="badgeCountDocentes" class="px-2 py-0.5 text-[11px] rounded-full bg-ipn-guinda text-white">0</span>
+                        </button>
+
+                        <button type="button" id="tabBtnActas" onclick="switchTab('actas')" class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-lg border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 flex items-center gap-2 transition cursor-pointer">
+                            <i class="fa-solid fa-table-list"></i>
+                            <span>Listado de Actas</span>
+                            <span id="badgeCountActas" class="px-2 py-0.5 text-[11px] rounded-full bg-slate-200 text-slate-700">0</span>
+                        </button>
+                    </div>
+
+                    <div id="docentesTabControls" class="pb-2 sm:pb-0 flex items-center gap-2 no-print">
+                        <select id="sortDocentes" onchange="renderDocentesView()" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-ipn-guinda">
+                            <option value="pendientes_desc">Ordenar: Mayor rezago</option>
+                            <option value="sin_confirmar_desc">Ordenar: Más sin confirmar</option>
+                            <option value="nombre_asc">Ordenar: Nombre (A - Z)</option>
+                            <option value="avance_asc">Ordenar: Menor % avance</option>
+                        </select>
+                        <button type="button" onclick="expandCollapseAllDocentes(true)" class="text-xs px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-slate-700 font-medium transition cursor-pointer" title="Expandir todos">
+                            <i class="fa-solid fa-angles-down"></i>
+                        </button>
+                        <button type="button" onclick="expandCollapseAllDocentes(false)" class="text-xs px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-slate-700 font-medium transition cursor-pointer" title="Contraer todos">
+                            <i class="fa-solid fa-angles-up"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- VISTA 1: ACORDEÓN POR DOCENTE -->
+                <div id="viewDocentes" class="p-4 space-y-3">
+                    <div id="docentesListContainer" class="space-y-3"></div>
+                </div>
+
+                <!-- VISTA 2: TABLA COMPLETA DE ACTAS -->
+                <div id="viewActas" class="hidden">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="min-w-full divide-y divide-slate-200 text-xs">
+                            <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Jefatura')">Jefatura / Carrera <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Secuencia')">Secuencia / Modalidad <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                    <th class="px-3 py-3 text-center cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('SEMESTRE')">Sem. <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Materia')">Clave / Asignatura <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Nombre')">Docente / RFC <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Fecha_limite')">Fecha Límite SAES <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Estatus_acta')">Estatus Acta <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                    <th class="px-3 py-3 text-right cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Pendientes')">Alumnos (Cal/Insc) <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="actasTableBody" class="bg-white divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 no-print">
+                        <div id="paginationInfo">Mostrando 0 a 0 de 0 actas</div>
+                        <div class="flex items-center gap-2">
+                            <select id="pageSizeSelect" onchange="changePageSize()" class="bg-white border border-slate-300 rounded-md px-2 py-1 text-xs">
+                                <option value="15">15 por página</option>
+                                <option value="30">30 por página</option>
+                                <option value="50">50 por página</option>
+                                <option value="100">100 por página</option>
+                            </select>
+                            <button type="button" id="btnPrevPage" onclick="changePage(-1)" class="px-3 py-1 bg-white border border-slate-300 rounded-md hover:bg-slate-100 disabled:opacity-50 font-medium cursor-pointer">Anterior</button>
+                            <span id="pageIndicator" class="font-bold text-slate-800 px-2">Página 1</span>
+                            <button type="button" id="btnNextPage" onclick="changePage(1)" class="px-3 py-1 bg-white border border-slate-300 rounded-md hover:bg-slate-100 disabled:opacity-50 font-medium cursor-pointer">Siguiente</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </main>
 
     <!-- PIE DE PÁGINA INSTITUCIONAL -->
@@ -503,32 +577,30 @@
             <div class="flex items-center gap-2">
                 <span class="font-bold text-ipn-guinda">IPN • ESCA Unidad Santo Tomás</span>
                 <span>—</span>
-                <span>Subdirección Académica / Jefaturas de Carrera</span>
+                <span>Seguimiento de Captura SAES (Modo Carga Manual)</span>
             </div>
             <div>
-                <span>"La Técnica al Servicio de la Patria" • Compatible con origen.xlsx (21 cols) y SAES (17 cols)</span>
+                <span>"La Técnica al Servicio de la Patria"</span>
             </div>
         </div>
     </footer>
 
-    <!-- MODAL: GENERADOR DE RECORDATORIO FORMAL PARA DOCENTE -->
+    <!-- MODAL: GENERADOR DE RECORDATORIO INSTITUCIONAL -->
     <div id="reminderModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 animate-fade-in">
-            <!-- Header Modal -->
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
             <div class="ipn-gradient px-5 py-4 text-white flex items-center justify-between ipn-gold-border">
                 <div class="flex items-center gap-2.5">
                     <i class="fa-solid fa-envelope-open-text text-ipn-oroLight text-lg"></i>
                     <div>
-                        <h3 class="font-bold text-base">Generador de Recordatorio Institucional</h3>
-                        <p id="modalDocenteSubtitle" class="text-xs text-white/80">Oficio / Correo de seguimiento de captura SAES</p>
+                        <h3 class="font-bold text-base">Recordatorio Institucional para Docente</h3>
+                        <p id="modalDocenteSubtitle" class="text-xs text-white/80">Oficio / Correo de seguimiento SAES</p>
                     </div>
                 </div>
-                <button onclick="closeReminderModal()" class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition cursor-pointer">
+                <button type="button" onclick="closeReminderModal()" class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition cursor-pointer">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <!-- Body Modal -->
             <div class="p-5 space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Asunto sugerido:</label>
@@ -537,7 +609,7 @@
 
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="block text-xs font-bold text-slate-700 uppercase">Cuerpo del mensaje (listo para copiar y enviar):</label>
+                        <label class="block text-xs font-bold text-slate-700 uppercase">Mensaje listo para copiar:</label>
                         <span id="copyFeedback" class="hidden text-xs font-bold text-emerald-600 flex items-center gap-1">
                             <i class="fa-solid fa-check"></i> ¡Copiado al portapapeles!
                         </span>
@@ -546,18 +618,42 @@
                 </div>
             </div>
 
-            <!-- Footer Modal -->
             <div class="bg-slate-50 px-5 py-3.5 border-t border-slate-200 flex flex-wrap items-center justify-end gap-2.5">
-                <button onclick="closeReminderModal()" class="px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition cursor-pointer">
+                <button type="button" onclick="closeReminderModal()" class="px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition cursor-pointer">
                     Cerrar
                 </button>
                 <a id="mailtoLink" href="#" class="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition">
                     <i class="fa-solid fa-paper-plane"></i>
-                    <span>Abrir en Cliente de Correo</span>
+                    <span>Abrir Correo</span>
                 </a>
-                <button onclick="copyReminderText()" class="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold bg-ipn-guinda hover:bg-ipn-guindaDark text-white rounded-lg shadow transition cursor-pointer">
+                <button type="button" onclick="copyReminderText()" class="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold bg-ipn-guinda hover:bg-ipn-guindaDark text-white rounded-lg shadow transition cursor-pointer">
                     <i class="fa-regular fa-copy"></i>
                     <span>Copiar Texto</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: GUÍA RÁPIDA PARA JEFES DE CARRERA -->
+    <div id="guideModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200">
+            <div class="ipn-gradient px-5 py-4 text-white flex items-center justify-between ipn-gold-border">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-question text-ipn-oroLight text-lg"></i>
+                    <h3 class="font-bold text-base">Guía Rápida — Jefaturas de Carrera</h3>
+                </div>
+                <button type="button" onclick="closeGuideModal()" class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                <p><strong>1. Carga manual del archivo:</strong> Haz clic en <em>Cargar archivo Excel</em> o arrastra tu archivo <span class="font-mono">.xlsx</span> / <span class="font-mono">.csv</span> desde tu carpeta local. No se realiza lectura automática al abrir la página.</p>
+                <p><strong>2. Jefatura y Modalidad:</strong> Filtra por tu <em>Jefatura</em> (incluyendo <em>FORMACIÓN BÁSICA</em>) y por <em>Modalidad</em>. Toda secuencia con <span class="font-mono font-bold">X</span> en su <strong>3.er carácter</strong> se identifica automáticamente como <strong>No Escolarizada</strong>.</p>
+                <p><strong>3. Seguimiento y Recordatorios:</strong> Expande cada docente para ver sus secuencias, filtra por estatus (<em>Sin Confirmar</em>, <em>Sin Registro</em> o <em>Rehabilitada</em>) y usa <em>Recordatorio</em> para generar el mensaje de seguimiento o <em>Exportar XLSX</em> para guardar la vista filtrada.</p>
+            </div>
+            <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 flex justify-end">
+                <button type="button" onclick="closeGuideModal()" class="px-4 py-2 text-xs sm:text-sm font-bold bg-ipn-guinda hover:bg-ipn-guindaDark text-white rounded-lg transition cursor-pointer">
+                    Entendido
                 </button>
             </div>
         </div>
@@ -571,12 +667,11 @@
         </div>
     </div>
 
-    <!-- LÓGICA DE APLICACIÓN JAVASCRIPT -->
     <script>
         // ============================================================================
-        // 1. CONFIGURACIÓN INSTITUCIONAL, REGLAS DE NEGOCIO Y CATÁLOGOS
+        // 1. REGLAS DE NEGOCIO Y CATÁLOGOS INSTITUCIONALES
         // ============================================================================
-        const REFERENCE_NOW = new Date('2026-11-25T19:25:43');
+        const REFERENCE_NOW = new Date('2026-11-25T20:07:00');
 
         const CARR_TO_JEFATURA = {
             'C': 'CONTADOR PÚBLICO',
@@ -593,10 +688,8 @@
         };
 
         /**
-         * REGLA CRÍTICA DE NEGOCIO:
-         * Si el tercer carácter de la Secuencia (índice 2, case-insensitive) es 'X'
-         * (ej. '1IXA2', '6OX1', '5RX12', '5NX12', '4CX10'), la modalidad es 'No Escolarizada'.
-         * De lo contrario, es 'Escolarizada'.
+         * Si el tercer carácter (índice 2, case-insensitive) de Secuencia es 'X',
+         * se clasifica como 'No Escolarizada'; en caso contrario, 'Escolarizada'.
          */
         function detectModalidadFromSecuencia(secuencia) {
             const cleanSec = String(secuencia || '').trim().toUpperCase();
@@ -607,131 +700,99 @@
         }
 
         function deriveSemestreFromSecuencia(secuencia) {
-            const cleanSec = String(secuencia || '').trim();
-            const firstChar = cleanSec.charAt(0);
-            if (/^[1-9]$/.test(firstChar)) {
-                return firstChar;
-            }
-            return '';
+            const firstChar = String(secuencia || '').trim().charAt(0);
+            return /^[1-9]$/.test(firstChar) ? firstChar : '';
         }
 
         function deriveJefatura(carrCode, semestreStr, existingJefatura) {
             const cleanJef = String(existingJefatura || '').trim().toUpperCase();
             if (cleanJef) return cleanJef;
             const sem = parseInt(semestreStr, 10);
-            if (sem === 1 || sem === 2) {
-                return 'FORMACIÓN BÁSICA';
-            }
+            if (sem === 1 || sem === 2) return 'FORMACIÓN BÁSICA';
             return CARR_TO_JEFATURA[carrCode] || 'OTRA JEFATURA';
         }
 
         // ============================================================================
-        // 2. DATOS PRECARGADOS REPRESENTATIVOS BASADOS EN origen.xlsx (21 COLUMNAS)
-        //    Incluye 8 Jefaturas (con FORMACIÓN BÁSICA), secuencias con 'X' en 3er
-        //    carácter (ej. 1IXA2, 6OX1, 5RX12, 5NX12, 4CX10) y escolarizadas (M/V).
-        // ============================================================================
-        const INITIAL_ORIGEN_DATA = [
-            // FORMACIÓN BÁSICA (1.º y 2.º Semestre - Escolarizada y No Escolarizada con 'X' en 3er carácter)
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'AACA650821', Nombre: 'ALVAREZ CASTILLO ANTONIO', Fecha_aplicacion: '2026-11-18 00:00', Fecha_limite: '2026-11-22 23:59', Estatus_acta: 'ACTA CAPTURADA Y CONFIRMADA', Porcentaje_eval: 100, Carrera: 'C-CONTADOR PÚBLICO', Plan_estud: '20', Especialidad: '0', Secuencia: '1CM12', Cve_Materia: 'C101', Materia: 'FUNDAMENTOS DE CONTABILIDAD', Inscritos: 14, Calificados: 14, Pendientes: 0, clave: '1CM12C101', SEMESTRE: '1', CARR: 'C', Jefatura: 'FORMACIÓN BÁSICA' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'AACA650821', Nombre: 'ALVAREZ CASTILLO ANTONIO', Fecha_aplicacion: '2026-11-18 00:00', Fecha_limite: '2026-11-22 23:59', Estatus_acta: 'ACTA CAPTURADA PERO NO CONFIRMADA', Porcentaje_eval: 100, Carrera: 'C-CONTADOR PÚBLICO', Plan_estud: '20', Especialidad: '0', Secuencia: '2CV15', Cve_Materia: 'C202', Materia: 'CONTABILIDAD DE ACTIVO Y PASIVO', Inscritos: 18, Calificados: 18, Pendientes: 0, clave: '2CV15C202', SEMESTRE: '2', CARR: 'C', Jefatura: 'FORMACIÓN BÁSICA' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'SARM740311', Nombre: 'SALAZAR RUIZ MARIA ELENA', Fecha_aplicacion: '2026-11-19 00:00', Fecha_limite: '2026-11-23 23:59', Estatus_acta: 'SIN REGISTRO', Porcentaje_eval: 100, Carrera: 'I-COMERCIO INTERNACIONAL NO ESC', Plan_estud: '9', Especialidad: 'I', Secuencia: '1IXA2', Cve_Materia: 'I104', Materia: 'MATEMATICAS FINANCIERAS APLICADAS', Inscritos: 22, Calificados: 0, Pendientes: 22, clave: '1IXA2I104', SEMESTRE: '1', CARR: 'I', Jefatura: 'FORMACIÓN BÁSICA' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'SARM740311', Nombre: 'SALAZAR RUIZ MARIA ELENA', Fecha_aplicacion: '2026-11-19 00:00', Fecha_limite: '2026-11-23 23:59', Estatus_acta: 'ACTA CAPTURADA Y CONFIRMADA', Porcentaje_eval: 100, Carrera: 'R-RELACIONES COMERCIALES', Plan_estud: '20', Especialidad: '0', Secuencia: '2RM08', Cve_Materia: 'R203', Materia: 'FUNDAMENTOS DE MERCADOTECNIA', Inscritos: 16, Calificados: 16, Pendientes: 0, clave: '2RM08R203', SEMESTRE: '2', CARR: 'R', Jefatura: 'FORMACIÓN BÁSICA' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'GOME800914', Nombre: 'GOMEZ MENDOZA EDUARDO', Fecha_aplicacion: '2026-11-20 00:00', Fecha_limite: '2026-11-24 23:59', Estatus_acta: 'ACTA CAPTURADA PERO NO CONFIRMADA', Porcentaje_eval: 100, Carrera: 'O-CONTADOR PÚBLICO NO ESC', Plan_estud: '12', Especialidad: '0', Secuencia: '2OXA1', Cve_Materia: 'O201', Materia: 'DERECHO MERCANTIL Y SOCIETARIO', Inscritos: 19, Calificados: 19, Pendientes: 0, clave: '2OXA1O201', SEMESTRE: '2', CARR: 'O', Jefatura: 'FORMACIÓN BÁSICA' },
-
-            // JEFATURA: CONTADOR PÚBLICO (Incluye caso 4CX10 bajo Carrera C con 'X' en 3er carácter -> No Escolarizada)
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'AAAC680829', Nombre: 'ARAIZA AGUILAR JOSE CARMEN', Fecha_aplicacion: '2026-11-18 00:00', Fecha_limite: '2026-11-22 23:59', Estatus_acta: 'ACTA CAPTURADA Y CONFIRMADA', Porcentaje_eval: 100, Carrera: 'C-CONTADOR PÚBLICO', Plan_estud: '20', Especialidad: '0', Secuencia: '4CV21', Cve_Materia: 'C434', Materia: 'ESTUDIO DEL CAPITAL CONTABLE', Inscritos: 12, Calificados: 12, Pendientes: 0, clave: '4CV21C434', SEMESTRE: '4', CARR: 'C', Jefatura: 'CONTADOR PÚBLICO' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'AAAC680829', Nombre: 'ARAIZA AGUILAR JOSE CARMEN', Fecha_aplicacion: '2026-11-18 00:00', Fecha_limite: '2026-11-22 23:59', Estatus_acta: 'ACTA CAPTURADA PERO NO CONFIRMADA', Porcentaje_eval: 100, Carrera: 'C-CONTADOR PÚBLICO', Plan_estud: '20', Especialidad: '0', Secuencia: '4CX10', Cve_Materia: 'C434', Materia: 'ESTUDIO DEL CAPITAL CONTABLE', Inscritos: 15, Calificados: 15, Pendientes: 0, clave: '4CX10C434', SEMESTRE: '4', CARR: 'C', Jefatura: 'CONTADOR PÚBLICO' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'MEGL750412', Nombre: 'MENDOZA GOMEZ LAURA PATRICIA', Fecha_aplicacion: '2026-11-19 00:00', Fecha_limite: '2026-11-23 23:59', Estatus_acta: 'SIN REGISTRO', Porcentaje_eval: 100, Carrera: 'O-CONTADOR PÚBLICO NO ESC', Plan_estud: '12', Especialidad: '0', Secuencia: '6OX1', Cve_Materia: 'O612', Materia: 'AUDITORIA DE ESTADOS FINANCIEROS', Inscritos: 21, Calificados: 0, Pendientes: 21, clave: '6OX1O612', SEMESTRE: '6', CARR: 'O', Jefatura: 'CONTADOR PÚBLICO' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'MEGL750412', Nombre: 'MENDOZA GOMEZ LAURA PATRICIA', Fecha_aplicacion: '2026-11-19 00:00', Fecha_limite: '2026-11-23 23:59', Estatus_acta: 'ACTA REHABILITADA', Porcentaje_eval: 100, Carrera: 'C-CONTADOR PÚBLICO', Plan_estud: '20', Especialidad: 'C', Secuencia: '7CM14', Cve_Materia: 'C715', Materia: 'DICTAMEN FISCAL Y FINANCIERO', Inscritos: 11, Calificados: 4, Pendientes: 7, clave: '7CM14C715', SEMESTRE: '7', CARR: 'C', Jefatura: 'CONTADOR PÚBLICO' },
-
-            // JEFATURA: RELACIONES COMERCIALES (Incluye secuencia 5RX12 bajo Carrera R con 'X' en 3er carácter -> No Escolarizada)
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'HERM790214', Nombre: 'HERNANDEZ RAMIREZ MARCO ANTONIO', Fecha_aplicacion: '2026-11-19 00:00', Fecha_limite: '2026-11-23 23:59', Estatus_acta: 'ACTA CAPTURADA PERO NO CONFIRMADA', Porcentaje_eval: 100, Carrera: 'R-RELACIONES COMERCIALES', Plan_estud: '20', Especialidad: 'R', Secuencia: '5RX12', Cve_Materia: 'R508', Materia: 'INVESTIGACION DE MERCADOS CUANTITATIVA', Inscritos: 19, Calificados: 19, Pendientes: 0, clave: '5RX12R508', SEMESTRE: '5', CARR: 'R', Jefatura: 'RELACIONES COMERCIALES' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'HERM790214', Nombre: 'HERNANDEZ RAMIREZ MARCO ANTONIO', Fecha_aplicacion: '2026-11-20 00:00', Fecha_limite: '2026-11-24 23:59', Estatus_acta: 'SIN REGISTRO', Porcentaje_eval: 100, Carrera: 'R-RELACIONES COMERCIALES', Plan_estud: '20', Especialidad: 'R', Secuencia: '5RV13', Cve_Materia: 'R508', Materia: 'INVESTIGACION DE MERCADOS CUANTITATIVA', Inscritos: 14, Calificados: 0, Pendientes: 14, clave: '5RV13R508', SEMESTRE: '5', CARR: 'R', Jefatura: 'RELACIONES COMERCIALES' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'VAZG841103', Nombre: 'VAZQUEZ GOMEZ GABRIELA', Fecha_aplicacion: '2026-11-18 00:00', Fecha_limite: '2026-11-22 23:59', Estatus_acta: 'ACTA CAPTURADA Y CONFIRMADA', Porcentaje_eval: 100, Carrera: 'L-RELACIONES COMERCIALES NO ESC', Plan_estud: '12', Especialidad: 'L', Secuencia: '6LXA3', Cve_Materia: 'L602', Materia: 'DIRECCION DE VENTAS Y CANALES', Inscritos: 24, Calificados: 24, Pendientes: 0, clave: '6LXA3L602', SEMESTRE: '6', CARR: 'L', Jefatura: 'RELACIONES COMERCIALES' },
-
-            // JEFATURA: NEGOCIOS INTERNACIONALES (Incluye secuencia 5NX12 bajo Carrera N con 'X' en 3er carácter -> No Escolarizada)
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'CAST720625', Nombre: 'CASTILLO TORRES RICARDO', Fecha_aplicacion: '2026-11-20 00:00', Fecha_limite: '2026-11-24 23:59', Estatus_acta: 'ACTA CAPTURADA PERO NO CONFIRMADA', Porcentaje_eval: 100, Carrera: 'N-NEGOCIOS INTERNACIONALES', Plan_estud: '20', Especialidad: 'N', Secuencia: '5NX12', Cve_Materia: 'N511', Materia: 'LOGISTICA Y CADENA DE SUMINISTRO GLOBAL', Inscritos: 17, Calificados: 16, Pendientes: 1, clave: '5NX12N511', SEMESTRE: '5', CARR: 'N', Jefatura: 'NEGOCIOS INTERNACIONALES' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'CAST720625', Nombre: 'CASTILLO TORRES RICARDO', Fecha_aplicacion: '2026-11-20 00:00', Fecha_limite: '2026-11-24 23:59', Estatus_acta: 'ACTA CAPTURADA Y CONFIRMADA', Porcentaje_eval: 100, Carrera: 'N-NEGOCIOS INTERNACIONALES', Plan_estud: '20', Especialidad: 'N', Secuencia: '7NV05', Cve_Materia: 'N711', Materia: 'OPERACION ADUANERA INTERNACIONAL', Inscritos: 13, Calificados: 13, Pendientes: 0, clave: '7NV05N711', SEMESTRE: '7', CARR: 'N', Jefatura: 'NEGOCIOS INTERNACIONALES' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'FLOA820420', Nombre: 'FLORES ALVAREZ MONICA', Fecha_aplicacion: '2026-11-21 00:00', Fecha_limite: '2026-11-27 23:59', Estatus_acta: 'SIN REGISTRO', Porcentaje_eval: 100, Carrera: 'E-NEGOCIOS INTERNACIONALES NO ESC', Plan_estud: '21', Especialidad: 'E', Secuencia: '4EXA2', Cve_Materia: 'E405', Materia: 'TRATADOS Y ACUERDOS COMERCIALES', Inscritos: 20, Calificados: 0, Pendientes: 20, clave: '4EXA2E405', SEMESTRE: '4', CARR: 'E', Jefatura: 'NEGOCIOS INTERNACIONALES' },
-
-            // JEFATURA: ADMINISTRACIÓN Y DESARROLLO EMPRESARIAL (A y D)
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'MORP761008', Nombre: 'MORALES PEREZ HECTOR MANUEL', Fecha_aplicacion: '2026-11-18 00:00', Fecha_limite: '2026-11-22 23:59', Estatus_acta: 'ACTA CAPTURADA Y CONFIRMADA', Porcentaje_eval: 100, Carrera: 'A-ADMINISTRACIÓN Y DESARROLLO EMPRESARIAL', Plan_estud: '20', Especialidad: 'A', Secuencia: '6AV02', Cve_Materia: 'A603', Materia: 'DIRECCION ESTRATEGICA Y LIDERAZGO', Inscritos: 11, Calificados: 11, Pendientes: 0, clave: '6AV02A603', SEMESTRE: '6', CARR: 'A', Jefatura: 'ADMINISTRACIÓN Y DESARROLLO EMPRESARIAL' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'GUTP850614', Nombre: 'GUTIERREZ PONCE PATRICIA ELENA', Fecha_aplicacion: '2026-11-19 00:00', Fecha_limite: '2026-11-23 23:59', Estatus_acta: 'ACTA CAPTURADA PERO NO CONFIRMADA', Porcentaje_eval: 100, Carrera: 'D-ADMINISTRACIÓN Y DESARROLLO EMPRESARIAL', Plan_estud: '12', Especialidad: 'D', Secuencia: '5DXA1', Cve_Materia: 'D502', Materia: 'DESARROLLO ORGANIZACIONAL Y CAMBIO', Inscritos: 16, Calificados: 16, Pendientes: 0, clave: '5DXA1D502', SEMESTRE: '5', CARR: 'D', Jefatura: 'ADMINISTRACIÓN Y DESARROLLO EMPRESARIAL' },
-
-            // JEFATURA: NEGOCIOS DIGITALES (G)
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'RUIZ900722', Nombre: 'RUIZ NAVARRO DIEGO ARTURO', Fecha_aplicacion: '2026-11-18 00:00', Fecha_limite: '2026-11-22 23:59', Estatus_acta: 'ACTA CAPTURADA Y CONFIRMADA', Porcentaje_eval: 100, Carrera: 'G-LICENCIATURA EN NEGOCIOS DIGITALES', Plan_estud: '22', Especialidad: 'G', Secuencia: '3GM1', Cve_Materia: 'G304', Materia: 'ANALITICA DE DATOS PARA NEGOCIOS', Inscritos: 10, Calificados: 10, Pendientes: 0, clave: '3GM1G304', SEMESTRE: '3', CARR: 'G', Jefatura: 'NEGOCIOS DIGITALES' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'LOPS871211', Nombre: 'LOPEZ SILVA SOFIA', Fecha_aplicacion: '2026-11-20 00:00', Fecha_limite: '2026-11-24 23:59', Estatus_acta: 'ACTA CAPTURADA PERO NO CONFIRMADA', Porcentaje_eval: 100, Carrera: 'G-LICENCIATURA EN NEGOCIOS DIGITALES', Plan_estud: '22', Especialidad: 'G', Secuencia: '5GV1', Cve_Materia: 'G502', Materia: 'ARQUITECTURA CLOUD Y COMERCIO ELECTRONICO', Inscritos: 9, Calificados: 9, Pendientes: 0, clave: '5GV1G502', SEMESTRE: '5', CARR: 'G', Jefatura: 'NEGOCIOS DIGITALES' },
-
-            // JEFATURA: MERCADOTECNIA DIGITAL (M)
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'GARC890130', Nombre: 'GARCIA MENDEZ CARLOS EDUARDO', Fecha_aplicacion: '2026-11-19 00:00', Fecha_limite: '2026-11-23 23:59', Estatus_acta: 'SIN REGISTRO', Porcentaje_eval: 100, Carrera: 'M-LICENCIATURA EN MERCADOTECNIA DIGITAL', Plan_estud: '24', Especialidad: 'M', Secuencia: '4MV2', Cve_Materia: 'M401', Materia: 'PUBLICIDAD PROGRAMATICA Y METRICAS', Inscritos: 12, Calificados: 0, Pendientes: 12, clave: '4MV2M401', SEMESTRE: '4', CARR: 'M', Jefatura: 'MERCADOTECNIA DIGITAL' },
-
-            // JEFATURA: COMERCIO INTERNACIONAL (I - Polivirtual)
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'RAMC691128', Nombre: 'RAMIREZ CASTRO JORGE ALBERTO', Fecha_aplicacion: '2026-11-18 00:00', Fecha_limite: '2026-11-22 23:59', Estatus_acta: 'ACTA CAPTURADA Y CONFIRMADA', Porcentaje_eval: 100, Carrera: 'I-COMERCIO INTERNACIONAL NO ESC', Plan_estud: '9', Especialidad: 'I', Secuencia: '8IXA1', Cve_Materia: 'I801', Materia: 'SEMINARIO DE PROYECTOS DE EXPORTACION', Inscritos: 23, Calificados: 23, Pendientes: 0, clave: '8IXA1I801', SEMESTRE: '8', CARR: 'I', Jefatura: 'COMERCIO INTERNACIONAL' },
-            { Periodo_escolar: '20271', Evaluacion: 'Extraordinario', RFC: 'RAMC691128', Nombre: 'RAMIREZ CASTRO JORGE ALBERTO', Fecha_aplicacion: '2026-11-19 00:00', Fecha_limite: '2026-11-23 23:59', Estatus_acta: 'ACTA REHABILITADA Y CAPTURADA', Porcentaje_eval: 100, Carrera: 'I-COMERCIO INTERNACIONAL NO ESC', Plan_estud: '9', Especialidad: 'I', Secuencia: '8IXA2', Cve_Materia: 'I802', Materia: 'FINANZAS INTERNACIONALES APLICADAS', Inscritos: 19, Calificados: 19, Pendientes: 0, clave: '8IXA2I802', SEMESTRE: '8', CARR: 'I', Jefatura: 'COMERCIO INTERNACIONAL' }
-        ];
-
-        // ============================================================================
-        // 3. ESTADO GLOBAL DE LA APLICACIÓN
+        // 2. ESTADO GLOBAL (INICIA VACÍO EN MODO CARGA MANUAL)
         // ============================================================================
         let rawRecords = [];
         let filteredRecords = [];
-        let currentTab = 'docentes';
-        let secondaryChartMode = 'jefatura'; // 'jefatura' | 'semestre'
+        let secondaryChartMode = 'jefatura';
         let expandedDocentes = new Set();
 
-        // Paginación y ordenamiento para tabla de actas
         let currentPage = 1;
         let pageSize = 15;
         let actasSortCol = 'Pendientes';
         let actasSortAsc = false;
 
-        // Instancias de Chart.js
         let statusChartInstance = null;
         let modalityChartInstance = null;
         let comparisonChartInstance = null;
 
         // ============================================================================
-        // 4. INICIALIZACIÓN Y MANEJO DE DRAG & DROP
+        // 3. INICIALIZACIÓN LIMPIA (SIN FETCH AUTOMÁTICO DE ./origen.xlsx)
         // ============================================================================
         window.addEventListener('DOMContentLoaded', () => {
             setupDragAndDrop();
-            loadDataset(
-                INITIAL_ORIGEN_DATA,
-                'Base: origen.xlsx (Estructura 21 Cols)',
-                'Muestra representativa • 8 Jefaturas • Regla 3er car. "X" activa'
-            );
         });
 
         function setupDragAndDrop() {
-            const dropZone = document.getElementById('dropZone');
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+            const zones = [
+                document.getElementById('heroDropZone'),
+                document.getElementById('compactDropZone')
+            ].filter(Boolean);
+
+            zones.forEach(zone => {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    zone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }, false);
+                });
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    zone.addEventListener(eventName, () => zone.classList.add('drop-zone-active'), false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    zone.addEventListener(eventName, () => zone.classList.remove('drop-zone-active'), false);
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                        processUploadedFile(files[0]);
+                    }
                 }, false);
             });
+        }
 
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => dropZone.classList.add('drop-zone-active'), false);
-            });
+        function clearLoadedDataset() {
+            rawRecords = [];
+            filteredRecords = [];
+            expandedDocentes.clear();
 
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => dropZone.classList.remove('drop-zone-active'), false);
-            });
+            if (statusChartInstance) { statusChartInstance.destroy(); statusChartInstance = null; }
+            if (modalityChartInstance) { modalityChartInstance.destroy(); modalityChartInstance = null; }
+            if (comparisonChartInstance) { comparisonChartInstance.destroy(); comparisonChartInstance = null; }
 
-            dropZone.addEventListener('drop', (e) => {
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    processUploadedFile(files[0]);
-                }
-            }, false);
+            document.getElementById('loadedFileName').textContent = 'Sin archivo cargado (Modo manual)';
+            document.getElementById('loadedFileMeta').textContent = 'Selecciona o arrastra tu archivo .xlsx, .xls o .csv';
+            document.getElementById('periodBadge').textContent = 'ESPERA';
+            document.getElementById('periodBadge').className = 'flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-slate-200 text-slate-700';
+            document.getElementById('btnClearFile').classList.add('hidden');
+
+            document.getElementById('dashboardContent').classList.add('hidden');
+            document.getElementById('emptyUploadScreen').classList.remove('hidden');
+
+            showToast('Archivo limpiado. Listo para cargar otro Excel o CSV.', 'success');
         }
 
         // ============================================================================
-        // 5. PARSEO DE EXCEL / CSV (SOPORTA origen.xlsx 21 COLS Y SAES 17 COLS)
+        // 4. LECTURA Y NORMALIZACIÓN DE ARCHIVOS (21 O 17 COLUMNAS)
         // ============================================================================
         function handleFileUpload(event) {
-            const file = event.target.files[0];
+            const file = event.target.files && event.target.files[0];
             if (file) {
                 processUploadedFile(file);
             }
@@ -789,17 +850,14 @@
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
 
-                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-
-                    if (rows.length < 2) {
-                        showToast('El archivo seleccionado está vacío o no contiene registros.', 'error');
+                    if (!rows || rows.length < 2) {
+                        showToast('El archivo no contiene registros suficientes.', 'error');
                         return;
                     }
 
-                    // Detectar fila de encabezados
                     let headerRowIndex = 0;
                     for (let i = 0; i < Math.min(10, rows.length); i++) {
                         const rowStr = rows[i].join('|').toUpperCase();
@@ -810,10 +868,10 @@
                     }
 
                     const headers = rows[headerRowIndex].map(h =>
-                        String(h).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        String(h).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                     );
 
-                    const findExactOrPartial = (exactNames, partialNames, fallbackIdx) => {
+                    const findCol = (exactNames, partialNames, fallbackIdx) => {
                         let idx = headers.findIndex(h => exactNames.includes(h));
                         if (idx === -1 && partialNames.length > 0) {
                             idx = headers.findIndex(h => partialNames.some(p => h.includes(p)));
@@ -821,32 +879,31 @@
                         return idx !== -1 ? idx : fallbackIdx;
                     };
 
-                    // Mapeo de las 21 columnas de origen.xlsx (con fallback a 17 columnas de SAES)
                     const idxMap = {
-                        Periodo_escolar: findExactOrPartial(['periodo_escolar', 'periodo'], ['periodo'], 0),
-                        Evaluacion: findExactOrPartial(['evaluacion'], ['eval'], 1),
-                        RFC: findExactOrPartial(['rfc'], [], 2),
-                        Nombre: findExactOrPartial(['nombre'], ['docente'], 3),
-                        Fecha_aplicacion: findExactOrPartial(['fecha aplicacion', 'fecha_aplicacion'], ['aplicacion'], 4),
-                        Fecha_limite: findExactOrPartial(['fecha limite saes', 'fecha_limite'], ['limite'], 5),
-                        Estatus_acta: findExactOrPartial(['estatus_acta', 'estatus'], ['estatus'], 6),
-                        Porcentaje_eval: findExactOrPartial(['porcentaje_eval', 'porcentaje'], ['porcentaje'], 7),
-                        Carrera: findExactOrPartial(['carrera'], ['programa'], 8),
-                        Plan_estud: findExactOrPartial(['plan_estud', 'plan'], ['plan'], 9),
-                        Especialidad: findExactOrPartial(['especialidad'], [], 10),
-                        Secuencia: findExactOrPartial(['secuencia'], ['grupo'], 11),
-                        Cve_Materia: findExactOrPartial(['cve_materia'], [], 12),
-                        Materia: findExactOrPartial(['materia'], ['asignatura'], 13),
-                        Inscritos: findExactOrPartial(['inscritos'], [], 14),
-                        Calificados: findExactOrPartial(['calificados'], [], 15),
-                        Pendientes: findExactOrPartial(['pendientes'], [], 16),
-                        clave: findExactOrPartial(['clave'], [], 17),
-                        SEMESTRE: findExactOrPartial(['semestre'], [], 18),
-                        CARR: findExactOrPartial(['carr'], [], 19),
-                        Jefatura: findExactOrPartial(['jefatura'], [], 20)
+                        Periodo_escolar: findCol(['periodo_escolar', 'periodo'], ['periodo'], 0),
+                        Evaluacion: findCol(['evaluacion'], ['eval'], 1),
+                        RFC: findCol(['rfc'], [], 2),
+                        Nombre: findCol(['nombre'], ['docente'], 3),
+                        Fecha_aplicacion: findCol(['fecha aplicacion', 'fecha_aplicacion'], ['aplicacion'], 4),
+                        Fecha_limite: findCol(['fecha limite saes', 'fecha_limite'], ['limite'], 5),
+                        Estatus_acta: findCol(['estatus_acta', 'estatus'], ['estatus'], 6),
+                        Porcentaje_eval: findCol(['porcentaje_eval', 'porcentaje'], ['porcentaje'], 7),
+                        Carrera: findCol(['carrera'], ['programa'], 8),
+                        Plan_estud: findCol(['plan_estud', 'plan'], ['plan'], 9),
+                        Especialidad: findCol(['especialidad'], [], 10),
+                        Secuencia: findCol(['secuencia'], ['grupo'], 11),
+                        Cve_Materia: findCol(['cve_materia'], [], 12),
+                        Materia: findCol(['materia'], ['asignatura'], 13),
+                        Inscritos: findCol(['inscritos'], [], 14),
+                        Calificados: findCol(['calificados'], [], 15),
+                        Pendientes: findCol(['pendientes'], [], 16),
+                        clave: findCol(['clave'], [], 17),
+                        SEMESTRE: findCol(['semestre'], [], 18),
+                        CARR: findCol(['carr'], [], 19),
+                        Jefatura: findCol(['jefatura'], [], 20)
                     };
 
-                    const parsedRecords = [];
+                    const parsed = [];
                     for (let r = headerRowIndex + 1; r < rows.length; r++) {
                         const row = rows[r];
                         if (!row || row.length === 0) continue;
@@ -855,7 +912,7 @@
                         const rfcVal = String(row[idxMap.RFC] || '').trim();
                         const matVal = String(row[idxMap.Materia] || '').trim();
 
-                        // Omitir pie de página de SAES ('© 2024 SAES IPN IPN-DAE') y filas vacías
+                        // Omitir pie de página institucional de SAES o filas vacías
                         if (firstCell.includes('©') || firstCell.toUpperCase().includes('SAES IPN')) continue;
                         if (!rfcVal && !matVal) continue;
 
@@ -866,7 +923,7 @@
                             pendientes = Math.max(0, inscritos - calificados);
                         }
 
-                        parsedRecords.push(enrichRecord({
+                        parsed.push(enrichRecord({
                             Periodo_escolar: firstCell,
                             Evaluacion: String(row[idxMap.Evaluacion] || '').trim(),
                             RFC: rfcVal.toUpperCase(),
@@ -891,48 +948,39 @@
                         }));
                     }
 
-                    if (parsedRecords.length === 0) {
-                        showToast('No se encontraron registros válidos en el archivo cargado.', 'error');
+                    if (parsed.length === 0) {
+                        showToast('No se encontraron registros válidos en el archivo.', 'error');
                         return;
                     }
 
-                    const noEscCount = parsedRecords.filter(x => x.Modalidad === 'No Escolarizada').length;
-                    loadDataset(
-                        parsedRecords,
-                        file.name,
-                        `${parsedRecords.length} actas (${parsedRecords.length - noEscCount} Esc. / ${noEscCount} No Esc. [X])`
-                    );
-                    showToast(`Archivo "${file.name}" cargado (${parsedRecords.length} actas procesadas).`, 'success');
+                    rawRecords = parsed;
+                    const noEscCount = rawRecords.filter(x => x.Modalidad === 'No Escolarizada').length;
+
+                    document.getElementById('loadedFileName').textContent = file.name;
+                    document.getElementById('loadedFileMeta').textContent = `${rawRecords.length} actas (${rawRecords.length - noEscCount} Esc. / ${noEscCount} No Esc. [X])`;
+                    document.getElementById('periodBadge').textContent = `${rawRecords[0].Periodo_escolar || 'SAES'} • ${rawRecords[0].Evaluacion || 'Corte'}`;
+                    document.getElementById('periodBadge').className = 'flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-ipn-guinda text-white';
+                    document.getElementById('periodSummaryLabel').textContent = `${rawRecords[0].Periodo_escolar || '—'} • ${rawRecords[0].Evaluacion || '—'}`;
+                    document.getElementById('btnClearFile').classList.remove('hidden');
+
+                    document.getElementById('emptyUploadScreen').classList.add('hidden');
+                    document.getElementById('dashboardContent').classList.remove('hidden');
+
+                    populateFilters();
+                    expandedDocentes.clear();
+                    applyFilters();
+
+                    showToast(`Cargado "${file.name}" (${rawRecords.length} actas).`, 'success');
                 } catch (err) {
                     console.error(err);
-                    showToast('Error al leer el archivo. Verifique que sea .xlsx, .xls o .csv válido.', 'error');
+                    showToast('Error al procesar el archivo. Verifica que sea un .xlsx, .xls o .csv válido.', 'error');
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        function loadDataset(records, fileName, metaInfo) {
-            rawRecords = records.map(enrichRecord);
-
-            document.getElementById('loadedFileName').textContent = fileName;
-            document.getElementById('loadedFileMeta').textContent = metaInfo;
-
-            const first = rawRecords[0];
-            if (first) {
-                document.getElementById('periodBadge').textContent = `${first.Periodo_escolar || 'SAES'} • ${first.Evaluacion || 'Eval.'}`;
-                document.getElementById('referenceDateLabel').textContent = `Periodo ${first.Periodo_escolar || '20271'} (${first.Evaluacion || 'SAES'})`;
-            }
-
-            populateDynamicDropdowns();
-            expandedDocentes.clear();
-            applyFilters();
-        }
-
-        function populateDynamicDropdowns() {
-            // 1. Jefaturas dinámicas (preservando el orden institucional + cualquier jefatura adicional)
-            const jefSelect = document.getElementById('jefaturaSelector');
-            const currentJef = jefSelect.value;
-            const preferredOrder = [
+        function populateFilters() {
+            const preferredJefOrder = [
                 'FORMACIÓN BÁSICA',
                 'CONTADOR PÚBLICO',
                 'RELACIONES COMERCIALES',
@@ -944,66 +992,72 @@
             ];
             const foundJefs = [...new Set(rawRecords.map(r => r.Jefatura).filter(Boolean))];
             const orderedJefs = [
-                ...preferredOrder.filter(j => foundJefs.includes(j)),
-                ...foundJefs.filter(j => !preferredOrder.includes(j)).sort()
+                ...preferredJefOrder.filter(j => foundJefs.includes(j)),
+                ...foundJefs.filter(j => !preferredJefOrder.includes(j)).sort()
             ];
 
+            const jefSelect = document.getElementById('jefaturaSelector');
             jefSelect.innerHTML = `<option value="ALL">🌐 TODAS LAS JEFATURAS — Vista Global (${rawRecords.length} actas)</option>` +
                 orderedJefs.map(j => {
-                    const count = rawRecords.filter(r => r.Jefatura === j).length;
-                    return `<option value="${j}">${j} (${count} actas)</option>`;
+                    const c = rawRecords.filter(r => r.Jefatura === j).length;
+                    return `<option value="${j}">${j} (${c})</option>`;
                 }).join('');
-            if ([...jefSelect.options].some(o => o.value === currentJef)) {
-                jefSelect.value = currentJef;
-            }
 
-            // 2. Carreras (Carrera completa)
             const carrSelect = document.getElementById('filterCarrera');
             const carreras = [...new Set(rawRecords.map(r => r.Carrera).filter(Boolean))].sort();
-            carrSelect.innerHTML = '<option value="ALL">Carrera (CARR): Todas</option>' +
+            carrSelect.innerHTML = '<option value="ALL">Carrera: Todas</option>' +
                 carreras.map(c => `<option value="${c}">${c}</option>`).join('');
 
-            // 3. Semestres (1.º a 8.º)
+            const planSelect = document.getElementById('filterPlan');
+            const planes = [...new Set(rawRecords.map(r => r.Plan_estud).filter(Boolean))].sort();
+            planSelect.innerHTML = '<option value="ALL">Plan: Todos</option>' +
+                planes.map(p => `<option value="${p}">Plan ${p}</option>`).join('');
+
             const semSelect = document.getElementById('filterSemestre');
             const semestres = [...new Set(rawRecords.map(r => r.SEMESTRE).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
-            semSelect.innerHTML = '<option value="ALL">Semestre: Todos</option>' +
-                semestres.map(s => `<option value="${s}">${s}.º Semestre</option>`).join('');
+            semSelect.innerHTML = '<option value="ALL">Sem.</option>' +
+                semestres.map(s => `<option value="${s}">${s}.º</option>`).join('');
         }
 
         // ============================================================================
-        // 6. FILTRADO EN TIEMPO REAL Y ACTUALIZACIÓN DE CONTEXTO
+        // 5. FILTRADO, KPIs Y GRÁFICAS
         // ============================================================================
         function applyFilters() {
-            const selectedJefatura = document.getElementById('jefaturaSelector').value;
-            const selectedModality = document.getElementById('modalitySelector').value;
+            if (rawRecords.length === 0) return;
+
+            const selectedJef = document.getElementById('jefaturaSelector').value;
+            const selectedMod = document.getElementById('modalitySelector').value;
             const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
             const carreraFilter = document.getElementById('filterCarrera').value;
-            const semestreFilter = document.getElementById('filterSemestre').value;
+            const planFilter = document.getElementById('filterPlan').value;
+            const semFilter = document.getElementById('filterSemestre').value;
             const statusFilter = document.getElementById('filterStatus').value;
             const pendingOnly = document.getElementById('filterPendingOnly').checked;
 
-            updateContextBanner(selectedJefatura, selectedModality);
+            updateContextBanner(selectedJef, selectedMod);
 
-            let activeFilters = 0;
-            if (searchQuery) activeFilters++;
-            if (carreraFilter !== 'ALL') activeFilters++;
-            if (semestreFilter !== 'ALL') activeFilters++;
-            if (statusFilter !== 'ALL') activeFilters++;
-            if (pendingOnly) activeFilters++;
+            let activeCount = 0;
+            if (searchQuery) activeCount++;
+            if (carreraFilter !== 'ALL') activeCount++;
+            if (planFilter !== 'ALL') activeCount++;
+            if (semFilter !== 'ALL') activeCount++;
+            if (statusFilter !== 'ALL') activeCount++;
+            if (pendingOnly) activeCount++;
 
             const badge = document.getElementById('activeFilterCount');
-            if (activeFilters > 0) {
-                badge.textContent = activeFilters;
+            if (activeCount > 0) {
+                badge.textContent = activeCount;
                 badge.classList.remove('hidden');
             } else {
                 badge.classList.add('hidden');
             }
 
             filteredRecords = rawRecords.filter(r => {
-                if (selectedJefatura !== 'ALL' && r.Jefatura !== selectedJefatura) return false;
-                if (selectedModality !== 'ALL' && r.Modalidad !== selectedModality) return false;
+                if (selectedJef !== 'ALL' && r.Jefatura !== selectedJef) return false;
+                if (selectedMod !== 'ALL' && r.Modalidad !== selectedMod) return false;
                 if (carreraFilter !== 'ALL' && r.Carrera !== carreraFilter) return false;
-                if (semestreFilter !== 'ALL' && r.SEMESTRE !== semestreFilter) return false;
+                if (planFilter !== 'ALL' && r.Plan_estud !== planFilter) return false;
+                if (semFilter !== 'ALL' && r.SEMESTRE !== semFilter) return false;
 
                 if (statusFilter !== 'ALL') {
                     if (statusFilter === 'CRITICAL') {
@@ -1014,13 +1068,13 @@
                 }
 
                 if (pendingOnly) {
-                    const isConfirmed = r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA';
-                    if (isConfirmed && r.Pendientes === 0) return false;
+                    const isConf = r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA';
+                    if (isConf && r.Pendientes === 0) return false;
                 }
 
                 if (searchQuery) {
-                    const haystack = `${r.Nombre} ${r.RFC} ${r.Secuencia} ${r.clave} ${r.Cve_Materia} ${r.Materia} ${r.Jefatura}`.toLowerCase();
-                    if (!haystack.includes(searchQuery)) return false;
+                    const hay = `${r.Nombre} ${r.RFC} ${r.Secuencia} ${r.clave} ${r.Cve_Materia} ${r.Materia} ${r.Jefatura} ${r.Carrera}`.toLowerCase();
+                    if (!hay.includes(searchQuery)) return false;
                 }
 
                 return true;
@@ -1028,29 +1082,29 @@
 
             currentPage = 1;
             updateKPIs();
-            updateCharts(selectedJefatura);
+            updateCharts(selectedJef);
             renderDocentesView();
             renderActasTable();
         }
 
-        function updateContextBanner(selectedJefatura, selectedModality) {
-            const titleEl = document.getElementById('careerBannerTitle');
-            const badgeEl = document.getElementById('modalityBadge');
-            const iconEl = document.getElementById('careerBannerIcon');
+        function updateContextBanner(selectedJef, selectedMod) {
+            const titleEl = document.getElementById('contextBannerTitle');
+            const badgeEl = document.getElementById('modalityContextBadge');
+            const iconEl = document.getElementById('contextBannerIcon');
 
-            if (selectedJefatura === 'ALL') {
+            if (selectedJef === 'ALL') {
                 titleEl.textContent = 'Todas las Jefaturas — Vista Global';
                 iconEl.innerHTML = '<i class="fa-solid fa-layer-group"></i>';
             } else {
-                titleEl.textContent = `Jefatura: ${selectedJefatura}`;
-                iconEl.innerHTML = `<span class="font-extrabold">${selectedJefatura.charAt(0)}</span>`;
+                titleEl.textContent = `Jefatura: ${selectedJef}`;
+                iconEl.innerHTML = `<span>${selectedJef.charAt(0)}</span>`;
             }
 
-            if (selectedModality === 'No Escolarizada') {
-                badgeEl.innerHTML = `<i class="fa-solid fa-globe mr-1"></i> Solo No Escolarizada (3er carácter 'X')`;
+            if (selectedMod === 'No Escolarizada') {
+                badgeEl.innerHTML = `<i class="fa-solid fa-globe mr-1"></i> No Escolarizada (3.er car. 'X')`;
                 badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200';
-            } else if (selectedModality === 'Escolarizada') {
-                badgeEl.innerHTML = `<i class="fa-solid fa-school mr-1"></i> Solo Escolarizada (Sin 'X' en 3er carácter)`;
+            } else if (selectedMod === 'Escolarizada') {
+                badgeEl.innerHTML = `<i class="fa-solid fa-school mr-1"></i> Escolarizada`;
                 badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-ipn-guindaSoft text-ipn-guinda border border-ipn-guinda/20';
             } else {
                 badgeEl.textContent = 'Escolarizada y No Escolarizada';
@@ -1058,26 +1112,15 @@
             }
         }
 
-        function getModalityBadgeHTML(modalidad, secuencia) {
-            if (modalidad === 'No Escolarizada') {
-                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200" title="Detectado por 'X' en 3er carácter de ${secuencia}">
-                    <i class="fa-solid fa-laptop text-indigo-600"></i> No Esc. [X]
-                </span>`;
-            }
-            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200" title="Secuencia Escolarizada (${secuencia})">
-                <i class="fa-solid fa-building text-slate-500"></i> Escolarizada
-            </span>`;
-        }
-
         function quickFilterByStatus(status) {
-            const select = document.getElementById('filterStatus');
-            select.value = select.value === status ? 'ALL' : status;
+            const sel = document.getElementById('filterStatus');
+            sel.value = sel.value === status ? 'ALL' : status;
             applyFilters();
         }
 
         function quickFilterByModality(mod) {
-            const select = document.getElementById('modalitySelector');
-            select.value = select.value === mod ? 'ALL' : mod;
+            const sel = document.getElementById('modalitySelector');
+            sel.value = sel.value === mod ? 'ALL' : mod;
             applyFilters();
         }
 
@@ -1090,6 +1133,7 @@
         function resetAllFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('filterCarrera').value = 'ALL';
+            document.getElementById('filterPlan').value = 'ALL';
             document.getElementById('filterSemestre').value = 'ALL';
             document.getElementById('filterStatus').value = 'ALL';
             document.getElementById('modalitySelector').value = 'ALL';
@@ -1097,108 +1141,66 @@
             applyFilters();
         }
 
-        // ============================================================================
-        // 7. CÁLCULO Y RENDERIZADO DE KPIs EJECUTIVOS
-        // ============================================================================
         function updateKPIs() {
             const totalActas = filteredRecords.length;
-            let totalInscritos = 0;
-            let totalCalificados = 0;
-            let confirmadas = 0;
-            let sinConfirmar = 0;
-            let sinRegistro = 0;
-            let rehabilitadas = 0;
-            let escActas = 0;
-            let noEscActas = 0;
-
+            let totalInscritos = 0, totalCalificados = 0;
+            let confirmadas = 0, sinConfirmar = 0, sinRegistro = 0, rehabilitadas = 0;
+            let escCount = 0, noEscCount = 0;
             const docentesMap = new Map();
 
             filteredRecords.forEach(r => {
                 totalInscritos += r.Inscritos;
                 totalCalificados += r.Calificados;
-
-                if (r.Modalidad === 'No Escolarizada') noEscActas++;
-                else escActas++;
+                if (r.Modalidad === 'No Escolarizada') noEscCount++; else escCount++;
 
                 if (r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA') {
                     confirmadas++;
                 } else if (r.Estatus_acta === 'ACTA CAPTURADA PERO NO CONFIRMADA') {
                     sinConfirmar++;
-                } else if (r.Estatus_acta === 'SIN REGISTRO') {
-                    sinRegistro++;
                 } else if (r.Estatus_acta === 'ACTA REHABILITADA') {
                     rehabilitadas++;
+                } else {
+                    sinRegistro++;
                 }
 
-                if (!docentesMap.has(r.RFC)) {
-                    docentesMap.set(r.RFC, { hasPending: false });
-                }
-                const isConfirmed = r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA';
-                if (!isConfirmed || r.Pendientes > 0) {
-                    docentesMap.get(r.RFC).hasPending = true;
-                }
+                if (!docentesMap.has(r.RFC)) docentesMap.set(r.RFC, false);
+                const isConf = r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA';
+                if (!isConf || r.Pendientes > 0) docentesMap.set(r.RFC, true);
             });
 
-            const avancePct = totalInscritos > 0 ? ((totalCalificados / totalInscritos) * 100).toFixed(1) : '0.0';
-            const totalDocentes = docentesMap.size;
-            let docentesConPendientes = 0;
-            docentesMap.forEach(d => { if (d.hasPending) docentesConPendientes++; });
+            const pct = totalInscritos > 0 ? ((totalCalificados / totalInscritos) * 100).toFixed(1) : '0.0';
+            let docentesPend = 0;
+            docentesMap.forEach(hasPend => { if (hasPend) docentesPend++; });
 
             document.getElementById('kpiTotalActas').textContent = totalActas.toLocaleString('es-MX');
-            document.getElementById('kpiTotalActasSub').textContent = `${escActas.toLocaleString('es-MX')} Esc. • ${noEscActas.toLocaleString('es-MX')} No Esc. [X]`;
-
-            document.getElementById('kpiAvancePct').textContent = `${avancePct}%`;
-            document.getElementById('kpiAvanceBar').style.width = `${Math.min(100, parseFloat(avancePct))}%`;
+            document.getElementById('kpiTotalActasSub').textContent = `${escCount} Esc. • ${noEscCount} No Esc. [X]`;
+            document.getElementById('kpiAvancePct').textContent = `${pct}%`;
+            document.getElementById('kpiAvanceBar').style.width = `${Math.min(100, parseFloat(pct))}%`;
             document.getElementById('kpiAvanceSub').textContent = `${totalCalificados.toLocaleString('es-MX')} de ${totalInscritos.toLocaleString('es-MX')} inscritos`;
-
             document.getElementById('kpiConfirmadas').textContent = confirmadas.toLocaleString('es-MX');
-            const confPct = totalActas > 0 ? Math.round((confirmadas / totalActas) * 100) : 0;
-            document.getElementById('kpiConfirmadasSub').textContent = `${confPct}% del total de actas`;
-
+            document.getElementById('kpiConfirmadasSub').textContent = `${totalActas > 0 ? Math.round((confirmadas / totalActas) * 100) : 0}% del total de actas`;
             document.getElementById('kpiSinConfirmar').textContent = sinConfirmar.toLocaleString('es-MX');
             document.getElementById('kpiSinRegistro').textContent = (sinRegistro + rehabilitadas).toLocaleString('es-MX');
             document.getElementById('kpiSinRegistroSub').textContent = `${sinRegistro} sin reg. • ${rehabilitadas} rehab.`;
-
-            document.getElementById('kpiDocentesPend').textContent = docentesConPendientes.toLocaleString('es-MX');
-            document.getElementById('kpiDocentesPendSub').textContent = `De ${totalDocentes} docentes en vista`;
+            document.getElementById('kpiDocentesPend').textContent = docentesPend.toLocaleString('es-MX');
+            document.getElementById('kpiDocentesPendSub').textContent = `De ${docentesMap.size} docentes en vista`;
         }
 
-        // ============================================================================
-        // 8. VISUALIZACIONES INTERACTIVAS (CHART.JS)
-        // ============================================================================
         function setSecondaryChartMode(mode) {
             secondaryChartMode = mode;
-            const btnJef = document.getElementById('btnChartJefatura');
-            const btnSem = document.getElementById('btnChartSemestre');
+            const btnJ = document.getElementById('btnChartJefatura');
+            const btnS = document.getElementById('btnChartSemestre');
             if (mode === 'jefatura') {
-                btnJef.className = 'px-2.5 py-1 rounded-md font-semibold bg-white text-ipn-guinda shadow-sm transition cursor-pointer';
-                btnSem.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer';
+                btnJ.className = 'px-2.5 py-1 rounded-md font-semibold bg-white text-ipn-guinda shadow-sm transition cursor-pointer';
+                btnS.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer';
             } else {
-                btnSem.className = 'px-2.5 py-1 rounded-md font-semibold bg-white text-ipn-guinda shadow-sm transition cursor-pointer';
-                btnJef.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer';
+                btnS.className = 'px-2.5 py-1 rounded-md font-semibold bg-white text-ipn-guinda shadow-sm transition cursor-pointer';
+                btnJ.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer';
             }
             updateCharts(document.getElementById('jefaturaSelector').value);
         }
 
-        function updateCharts(selectedJefatura) {
-            // 1. Gráfica de Dona: Estatus_acta
-            const statusCounts = {
-                'ACTA CAPTURADA Y CONFIRMADA': 0,
-                'ACTA REHABILITADA Y CAPTURADA': 0,
-                'ACTA CAPTURADA PERO NO CONFIRMADA': 0,
-                'SIN REGISTRO': 0,
-                'ACTA REHABILITADA': 0
-            };
-
-            filteredRecords.forEach(r => {
-                if (statusCounts.hasOwnProperty(r.Estatus_acta)) {
-                    statusCounts[r.Estatus_acta]++;
-                } else {
-                    statusCounts['SIN REGISTRO']++;
-                }
-            });
-
-            const statusLabels = ['Confirmada', 'Rehab. y Capt.', 'Sin Confirmar', 'Sin Registro', 'Rehabilitada'];
+        function updateCharts(selectedJef) {
             const statusKeys = [
                 'ACTA CAPTURADA Y CONFIRMADA',
                 'ACTA REHABILITADA Y CAPTURADA',
@@ -1206,62 +1208,54 @@
                 'SIN REGISTRO',
                 'ACTA REHABILITADA'
             ];
-            const statusColors = ['#10B981', '#0D9488', '#F59E0B', '#EF4444', '#F97316'];
-            const statusValues = statusKeys.map(k => statusCounts[k]);
+            const counts = {
+                'ACTA CAPTURADA Y CONFIRMADA': 0,
+                'ACTA REHABILITADA Y CAPTURADA': 0,
+                'ACTA CAPTURADA PERO NO CONFIRMADA': 0,
+                'SIN REGISTRO': 0,
+                'ACTA REHABILITADA': 0
+            };
+            filteredRecords.forEach(r => {
+                if (counts.hasOwnProperty(r.Estatus_acta)) counts[r.Estatus_acta]++;
+                else counts['SIN REGISTRO']++;
+            });
 
-            const ctxStatus = document.getElementById('statusChart').getContext('2d');
             if (statusChartInstance) statusChartInstance.destroy();
-
-            statusChartInstance = new Chart(ctxStatus, {
+            statusChartInstance = new Chart(document.getElementById('statusChart').getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: statusLabels,
+                    labels: ['Confirmada', 'Rehab. y Capt.', 'Sin Confirmar', 'Sin Registro', 'Rehabilitada'],
                     datasets: [{
-                        data: statusValues,
-                        backgroundColor: statusColors,
+                        data: statusKeys.map(k => counts[k]),
+                        backgroundColor: ['#10B981', '#0D9488', '#F59E0B', '#EF4444', '#F97316'],
                         borderWidth: 2,
-                        borderColor: '#FFFFFF',
-                        hoverOffset: 6
+                        borderColor: '#FFFFFF'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     cutout: '60%',
-                    onClick: (evt, elements) => {
-                        if (elements.length > 0) {
-                            quickFilterByStatus(statusKeys[elements[0].index]);
-                        }
+                    onClick: (e, els) => {
+                        if (els.length > 0) quickFilterByStatus(statusKeys[els[0].index]);
                     },
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { boxWidth: 10, font: { family: 'Inter', size: 10 }, padding: 8 }
-                        }
-                    }
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { family: 'Inter', size: 10 }, padding: 8 } } }
                 }
             });
 
-            // 2. Gráfica Comparativa por Modalidad (Escolarizada vs No Escolarizada [3er car. 'X'])
             const modStats = {
                 'Escolarizada': { conf: 0, noConf: 0, crit: 0 },
                 'No Escolarizada': { conf: 0, noConf: 0, crit: 0 }
             };
             filteredRecords.forEach(r => {
                 const m = r.Modalidad === 'No Escolarizada' ? 'No Escolarizada' : 'Escolarizada';
-                if (r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA') {
-                    modStats[m].conf++;
-                } else if (r.Estatus_acta === 'ACTA CAPTURADA PERO NO CONFIRMADA') {
-                    modStats[m].noConf++;
-                } else {
-                    modStats[m].crit++;
-                }
+                if (r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA') modStats[m].conf++;
+                else if (r.Estatus_acta === 'ACTA CAPTURADA PERO NO CONFIRMADA') modStats[m].noConf++;
+                else modStats[m].crit++;
             });
 
-            const ctxMod = document.getElementById('modalityChart').getContext('2d');
             if (modalityChartInstance) modalityChartInstance.destroy();
-
-            modalityChartInstance = new Chart(ctxMod, {
+            modalityChartInstance = new Chart(document.getElementById('modalityChart').getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: ['Escolarizada', "No Esc. ['X']"],
@@ -1274,60 +1268,40 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    onClick: (evt, elements) => {
-                        if (elements.length > 0) {
-                            const modName = elements[0].index === 1 ? 'No Escolarizada' : 'Escolarizada';
-                            quickFilterByModality(modName);
-                        }
+                    onClick: (e, els) => {
+                        if (els.length > 0) quickFilterByModality(els[0].index === 1 ? 'No Escolarizada' : 'Escolarizada');
                     },
                     scales: {
                         x: { stacked: true, grid: { display: false }, ticks: { font: { family: 'Inter', size: 10, weight: 'bold' } } },
                         y: { stacked: true, beginAtZero: true, ticks: { precision: 0, font: { family: 'Inter', size: 10 } } }
                     },
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { family: 'Inter', size: 10 }, padding: 8 } }
-                    }
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { family: 'Inter', size: 10 }, padding: 8 } } }
                 }
             });
 
-            // 3. Gráfica Comparativa por Jefatura o Semestre
-            const barTitle = document.getElementById('barChartTitle');
-            const barSubtitle = document.getElementById('barChartSubtitle');
-            const useJefatura = secondaryChartMode === 'jefatura' && selectedJefatura === 'ALL';
-
-            barTitle.textContent = useJefatura ? 'Avance por Jefatura de Carrera' : 'Desglose por Semestre (1.º a 8.º)';
-            barSubtitle.textContent = useJefatura
-                ? 'Actas confirmadas vs. pendientes por jefatura (incl. Formación Básica)'
-                : 'Cumplimiento de actas por semestre académico';
+            const useJef = secondaryChartMode === 'jefatura' && selectedJef === 'ALL';
+            document.getElementById('barChartTitle').textContent = useJef ? 'Avance por Jefatura' : 'Desglose por Semestre';
+            document.getElementById('barChartSubtitle').textContent = useJef ? 'Actas confirmadas vs. pendientes' : 'Cumplimiento por semestre';
 
             const groups = {};
             filteredRecords.forEach(r => {
-                const key = useJefatura ? (r.Jefatura || 'SIN JEFATURA') : `${r.SEMESTRE || '?'}º Sem.`;
+                const key = useJef ? (r.Jefatura || 'SIN JEFATURA') : `${r.SEMESTRE || '?'}º Sem.`;
                 if (!groups[key]) groups[key] = { conf: 0, noConf: 0, crit: 0 };
-
-                if (r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA') {
-                    groups[key].conf++;
-                } else if (r.Estatus_acta === 'ACTA CAPTURADA PERO NO CONFIRMADA') {
-                    groups[key].noConf++;
-                } else {
-                    groups[key].crit++;
-                }
+                if (r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA') groups[key].conf++;
+                else if (r.Estatus_acta === 'ACTA CAPTURADA PERO NO CONFIRMADA') groups[key].noConf++;
+                else groups[key].crit++;
             });
 
-            const fullGroupKeys = Object.keys(groups).sort();
-            const groupLabels = fullGroupKeys.map(k => useJefatura ? k.substring(0, 14) : k);
-
-            const ctxComp = document.getElementById('comparisonChart').getContext('2d');
+            const fullKeys = Object.keys(groups).sort();
             if (comparisonChartInstance) comparisonChartInstance.destroy();
-
-            comparisonChartInstance = new Chart(ctxComp, {
+            comparisonChartInstance = new Chart(document.getElementById('comparisonChart').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: groupLabels,
+                    labels: fullKeys.map(k => useJef ? k.substring(0, 14) : k),
                     datasets: [
-                        { label: 'Confirmadas', data: fullGroupKeys.map(k => groups[k].conf), backgroundColor: '#10B981', borderRadius: 3 },
-                        { label: 'Sin Confirmar', data: fullGroupKeys.map(k => groups[k].noConf), backgroundColor: '#F59E0B', borderRadius: 3 },
-                        { label: 'Sin Reg. / Rehab.', data: fullGroupKeys.map(k => groups[k].crit), backgroundColor: '#EF4444', borderRadius: 3 }
+                        { label: 'Confirmadas', data: fullKeys.map(k => groups[k].conf), backgroundColor: '#10B981', borderRadius: 3 },
+                        { label: 'Sin Confirmar', data: fullKeys.map(k => groups[k].noConf), backgroundColor: '#F59E0B', borderRadius: 3 },
+                        { label: 'Sin Reg. / Rehab.', data: fullKeys.map(k => groups[k].crit), backgroundColor: '#EF4444', borderRadius: 3 }
                     ]
                 },
                 options: {
@@ -1339,256 +1313,181 @@
                     },
                     plugins: {
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { family: 'Inter', size: 10 }, padding: 8 } },
-                        tooltip: {
-                            callbacks: {
-                                title: (items) => fullGroupKeys[items[0].dataIndex] || items[0].label
-                            }
-                        }
+                        tooltip: { callbacks: { title: (items) => fullKeys[items[0].dataIndex] || items[0].label } }
                     }
                 }
             });
         }
 
         // ============================================================================
-        // 9. VISTAS DE ANÁLISIS: TABS Y ACORDEÓN POR DOCENTE
+        // 6. VISTAS POR DOCENTE Y LISTADO DE ACTAS
         // ============================================================================
-        function switchTab(tabName) {
-            currentTab = tabName;
-            const btnDoc = document.getElementById('tabBtnDocentes');
-            const btnAct = document.getElementById('tabBtnActas');
-            const viewDoc = document.getElementById('viewDocentes');
-            const viewAct = document.getElementById('viewActas');
-            const docControls = document.getElementById('docentesTabControls');
+        function switchTab(tab) {
+            const isDoc = tab === 'docentes';
+            document.getElementById('tabBtnDocentes').className = isDoc
+                ? 'px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-ipn-guinda text-ipn-guinda bg-white flex items-center gap-2 transition cursor-pointer'
+                : 'px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-lg border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 flex items-center gap-2 transition cursor-pointer';
+            document.getElementById('tabBtnActas').className = !isDoc
+                ? 'px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-ipn-guinda text-ipn-guinda bg-white flex items-center gap-2 transition cursor-pointer'
+                : 'px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-lg border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 flex items-center gap-2 transition cursor-pointer';
+            document.getElementById('viewDocentes').classList.toggle('hidden', !isDoc);
+            document.getElementById('viewActas').classList.toggle('hidden', isDoc);
+            document.getElementById('docentesTabControls').classList.toggle('hidden', !isDoc);
+        }
 
-            if (tabName === 'docentes') {
-                btnDoc.className = 'px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-ipn-guinda text-ipn-guinda bg-white flex items-center gap-2 transition cursor-pointer';
-                btnAct.className = 'px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-lg border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 flex items-center gap-2 transition cursor-pointer';
-                viewDoc.classList.remove('hidden');
-                viewAct.classList.add('hidden');
-                docControls.classList.remove('hidden');
-            } else {
-                btnAct.className = 'px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-ipn-guinda text-ipn-guinda bg-white flex items-center gap-2 transition cursor-pointer';
-                btnDoc.className = 'px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-lg border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 flex items-center gap-2 transition cursor-pointer';
-                viewAct.classList.remove('hidden');
-                viewDoc.classList.add('hidden');
-                docControls.classList.add('hidden');
+        function getModalityBadgeHTML(modalidad, secuencia) {
+            if (modalidad === 'No Escolarizada') {
+                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200" title="3.er carácter 'X' en ${secuencia}">
+                    <i class="fa-solid fa-laptop text-indigo-600"></i> No Esc. [X]
+                </span>`;
             }
+            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                <i class="fa-solid fa-building text-slate-500"></i> Escolarizada
+            </span>`;
         }
 
         function getStatusBadgeHTML(status) {
             switch (status) {
                 case 'ACTA CAPTURADA Y CONFIRMADA':
-                    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check-circle text-emerald-600"></i> CAPTURADA Y CONFIRMADA</span>`;
+                    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check-circle text-emerald-600"></i> CONFIRMADA</span>`;
                 case 'ACTA REHABILITADA Y CAPTURADA':
-                    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 border border-teal-200"><i class="fa-solid fa-rotate text-teal-600"></i> REHABILITADA Y CAPTURADA</span>`;
+                    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 border border-teal-200"><i class="fa-solid fa-rotate text-teal-600"></i> REHAB. Y CAPTURADA</span>`;
                 case 'ACTA CAPTURADA PERO NO CONFIRMADA':
-                    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300"><i class="fa-solid fa-triangle-exclamation text-amber-600"></i> CAPTURADA NO CONFIRMADA</span>`;
+                    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300"><i class="fa-solid fa-triangle-exclamation text-amber-600"></i> SIN CONFIRMAR</span>`;
                 case 'ACTA REHABILITADA':
-                    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-900 border border-orange-300"><i class="fa-solid fa-clock-rotate-left text-orange-600"></i> ACTA REHABILITADA</span>`;
-                case 'SIN REGISTRO':
+                    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-900 border border-orange-300"><i class="fa-solid fa-clock-rotate-left text-orange-600"></i> REHABILITADA</span>`;
                 default:
                     return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200"><i class="fa-solid fa-circle-xmark text-rose-600"></i> SIN REGISTRO</span>`;
             }
         }
 
-        function getDeadlineIndicatorHTML(fechaLimiteStr, isConfirmed) {
-            if (!fechaLimiteStr || fechaLimiteStr === 'Sin fecha') return `<span class="text-slate-400">Sin fecha</span>`;
-            const parsed = new Date(fechaLimiteStr.replace(' ', 'T'));
-            if (isNaN(parsed.getTime())) return `<span class="text-slate-600">${fechaLimiteStr}</span>`;
-
-            if (isConfirmed) {
-                return `<span class="text-slate-600">${fechaLimiteStr}</span>`;
+        function getDeadlineHTML(fechaStr, isConf) {
+            if (!fechaStr || fechaStr === 'Sin fecha') return `<span class="text-slate-400">Sin fecha</span>`;
+            const dt = new Date(fechaStr.replace(' ', 'T'));
+            if (isNaN(dt.getTime()) || isConf) return `<span class="text-slate-600">${fechaStr}</span>`;
+            const diffHrs = (dt - REFERENCE_NOW) / (1000 * 60 * 60);
+            if (diffHrs < 0) {
+                return `<div><span class="font-bold text-rose-700">${fechaStr}</span><div class="text-[10px] font-bold text-rose-600 uppercase">Plazo vencido</div></div>`;
             }
-
-            const diffMs = parsed - REFERENCE_NOW;
-            const diffHours = diffMs / (1000 * 60 * 60);
-
-            if (diffHours < 0) {
-                return `<div class="flex flex-col">
-                    <span class="font-bold text-rose-700">${fechaLimiteStr}</span>
-                    <span class="text-[10px] font-bold text-rose-600 uppercase"><i class="fa-solid fa-fire"></i> Plazo SAES vencido</span>
-                </div>`;
-            } else if (diffHours <= 48) {
-                return `<div class="flex flex-col">
-                    <span class="font-bold text-amber-700">${fechaLimiteStr}</span>
-                    <span class="text-[10px] font-bold text-amber-600 uppercase"><i class="fa-solid fa-hourglass-half"></i> Próxima a vencer</span>
-                </div>`;
+            if (diffHrs <= 48) {
+                return `<div><span class="font-bold text-amber-700">${fechaStr}</span><div class="text-[10px] font-bold text-amber-600 uppercase">Próxima a vencer</div></div>`;
             }
-            return `<span class="text-slate-700 font-medium">${fechaLimiteStr}</span>`;
+            return `<span class="text-slate-700 font-medium">${fechaStr}</span>`;
         }
 
-        function groupRecordsByDocente() {
+        function groupByDocente() {
             const map = new Map();
             filteredRecords.forEach(r => {
                 const key = r.RFC || r.Nombre;
                 if (!map.has(key)) {
                     map.set(key, {
-                        RFC: r.RFC,
-                        Nombre: r.Nombre,
-                        actas: [],
-                        confirmadas: 0,
-                        sinConfirmar: 0,
-                        sinRegistro: 0,
-                        rehabilitadas: 0,
-                        escCount: 0,
-                        noEscCount: 0,
-                        inscritos: 0,
-                        calificados: 0,
-                        pendientes: 0
+                        RFC: r.RFC, Nombre: r.Nombre, actas: [],
+                        confirmadas: 0, sinConfirmar: 0, sinRegistro: 0, rehabilitadas: 0,
+                        escCount: 0, noEscCount: 0, inscritos: 0, calificados: 0, pendientes: 0
                     });
                 }
-                const doc = map.get(key);
-                doc.actas.push(r);
-                doc.inscritos += r.Inscritos;
-                doc.calificados += r.Calificados;
-                doc.pendientes += r.Pendientes;
+                const d = map.get(key);
+                d.actas.push(r);
+                d.inscritos += r.Inscritos;
+                d.calificados += r.Calificados;
+                d.pendientes += r.Pendientes;
+                if (r.Modalidad === 'No Escolarizada') d.noEscCount++; else d.escCount++;
 
-                if (r.Modalidad === 'No Escolarizada') doc.noEscCount++;
-                else doc.escCount++;
-
-                if (r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA') {
-                    doc.confirmadas++;
-                } else if (r.Estatus_acta === 'ACTA CAPTURADA PERO NO CONFIRMADA') {
-                    doc.sinConfirmar++;
-                } else if (r.Estatus_acta === 'ACTA REHABILITADA') {
-                    doc.rehabilitadas++;
-                } else {
-                    doc.sinRegistro++;
-                }
+                if (r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA') d.confirmadas++;
+                else if (r.Estatus_acta === 'ACTA CAPTURADA PERO NO CONFIRMADA') d.sinConfirmar++;
+                else if (r.Estatus_acta === 'ACTA REHABILITADA') d.rehabilitadas++;
+                else d.sinRegistro++;
             });
-
             return Array.from(map.values());
         }
 
         function renderDocentesView() {
             const container = document.getElementById('docentesListContainer');
-            const docentes = groupRecordsByDocente();
+            const docentes = groupByDocente();
 
             document.getElementById('badgeCountDocentes').textContent = docentes.length;
             document.getElementById('badgeCountActas').textContent = filteredRecords.length;
 
             if (docentes.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-12 px-4">
-                        <div class="w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-2xl">
-                            <i class="fa-solid fa-folder-open"></i>
-                        </div>
-                        <h4 class="text-base font-bold text-slate-700">No se encontraron docentes con los filtros actuales</h4>
-                        <p class="text-xs text-slate-500 mt-1">Intenta limpiar los filtros o seleccionar otra carrera en el menú superior.</p>
-                    </div>`;
+                container.innerHTML = `<div class="text-center py-12 text-xs sm:text-sm text-slate-500">No hay docentes que coincidan con los filtros seleccionados.</div>`;
                 return;
             }
 
-            // Ordenar docentes
             const sortBy = document.getElementById('sortDocentes').value;
             docentes.sort((a, b) => {
-                const aUnconfirmedTotal = a.sinConfirmar + a.sinRegistro + a.rehabilitadas;
-                const bUnconfirmedTotal = b.sinConfirmar + b.sinRegistro + b.rehabilitadas;
-                if (sortBy === 'pendientes_desc') {
-                    if (b.pendientes !== a.pendientes) return b.pendientes - a.pendientes;
-                    return bUnconfirmedTotal - aUnconfirmedTotal;
-                } else if (sortBy === 'sin_confirmar_desc') {
-                    return bUnconfirmedTotal - aUnconfirmedTotal;
-                } else if (sortBy === 'avance_asc') {
-                    const pctA = a.inscritos > 0 ? a.calificados / a.inscritos : 1;
-                    const pctB = b.inscritos > 0 ? b.calificados / b.inscritos : 1;
-                    return pctA - pctB;
-                } else {
-                    return a.Nombre.localeCompare(b.Nombre);
-                }
+                const pendA = a.sinConfirmar + a.sinRegistro + a.rehabilitadas;
+                const pendB = b.sinConfirmar + b.sinRegistro + b.rehabilitadas;
+                if (sortBy === 'pendientes_desc') return (b.pendientes - a.pendientes) || (pendB - pendA);
+                if (sortBy === 'sin_confirmar_desc') return pendB - pendA;
+                if (sortBy === 'avance_asc') return ((a.inscritos ? a.calificados / a.inscritos : 1) - (b.inscritos ? b.calificados / b.inscritos : 1));
+                return a.Nombre.localeCompare(b.Nombre);
             });
 
             container.innerHTML = docentes.map(doc => {
-                const totalActas = doc.actas.length;
-                const pctAvance = doc.inscritos > 0 ? Math.round((doc.calificados / doc.inscritos) * 100) : 0;
-                const isExpanded = expandedDocentes.has(doc.RFC);
-                const hasCritical = (doc.sinRegistro + doc.rehabilitadas) > 0;
-                const hasWarning = doc.sinConfirmar > 0;
-                const isComplete = !hasCritical && !hasWarning && doc.pendientes === 0;
+                const pct = doc.inscritos > 0 ? Math.round((doc.calificados / doc.inscritos) * 100) : 0;
+                const isExp = expandedDocentes.has(doc.RFC);
+                const hasCrit = (doc.sinRegistro + doc.rehabilitadas) > 0;
+                const hasWarn = doc.sinConfirmar > 0;
+                const isComplete = !hasCrit && !hasWarn && doc.pendientes === 0;
 
-                // Semáforo de cumplimiento
-                let semaphoreBadge = '';
-                let borderClass = 'border-slate-200';
-                let progressColor = 'bg-emerald-500';
-
-                if (hasCritical) {
-                    semaphoreBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200"><span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span> Rezago Crítico</span>`;
-                    borderClass = 'border-rose-200/90';
-                    progressColor = 'bg-rose-500';
-                } else if (hasWarning || doc.pendientes > 0) {
-                    semaphoreBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Falta Confirmar</span>`;
-                    borderClass = 'border-amber-200/90';
-                    progressColor = 'bg-amber-500';
-                } else {
-                    semaphoreBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><span class="w-2 h-2 rounded-full bg-emerald-600"></span> Cumplido 100%</span>`;
+                let badge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><span class="w-2 h-2 rounded-full bg-emerald-600"></span> Cumplido</span>`;
+                let barColor = 'bg-emerald-500';
+                if (hasCrit) {
+                    badge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200"><span class="w-2 h-2 rounded-full bg-rose-600"></span> Rezago Crítico</span>`;
+                    barColor = 'bg-rose-500';
+                } else if (hasWarn || doc.pendientes > 0) {
+                    badge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Falta Confirmar</span>`;
+                    barColor = 'bg-amber-500';
                 }
 
                 return `
-                <div class="border ${borderClass} rounded-xl bg-white shadow-sm hover:shadow transition overflow-hidden">
-                    <!-- Cabecera del Acordeón Docente -->
-                    <div class="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/80 transition" onclick="toggleDocenteAccordion('${doc.RFC}')">
-                        <!-- Info Principal del Docente -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <div class="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/80 transition" onclick="toggleDocente('${doc.RFC}')">
                         <div class="flex items-start sm:items-center gap-3 min-w-0">
-                            <button type="button" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0">
-                                <i class="fa-solid ${isExpanded ? 'fa-chevron-up text-ipn-guinda' : 'fa-chevron-down'} text-xs"></i>
+                            <button type="button" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid ${isExp ? 'fa-chevron-up text-ipn-guinda' : 'fa-chevron-down'} text-xs"></i>
                             </button>
                             <div class="min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <h4 class="text-sm font-extrabold text-slate-900 truncate">${doc.Nombre}</h4>
                                     <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[11px] font-semibold border border-slate-200">${doc.RFC}</span>
-                                    ${semaphoreBadge}
+                                    ${badge}
                                 </div>
                                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1.5">
-                                    <span><strong class="text-slate-700">${totalActas}</strong> ${totalActas === 1 ? 'acta' : 'actas'} (${doc.escCount} Esc. / ${doc.noEscCount} No Esc.)</span>
-                                    <span class="text-emerald-700 font-medium"><i class="fa-solid fa-check"></i> ${doc.confirmadas} conf.</span>
-                                    ${doc.sinConfirmar > 0 ? `<span class="text-amber-700 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> ${doc.sinConfirmar} sin confirmar</span>` : ''}
-                                    ${(doc.sinRegistro + doc.rehabilitadas) > 0 ? `<span class="text-rose-700 font-bold"><i class="fa-solid fa-circle-xmark"></i> ${doc.sinRegistro + doc.rehabilitadas} sin reg./rehab.</span>` : ''}
+                                    <span><strong class="text-slate-700">${doc.actas.length}</strong> actas (${doc.escCount} Esc. / ${doc.noEscCount} No Esc.)</span>
+                                    <span class="text-emerald-700 font-medium">${doc.confirmadas} conf.</span>
+                                    ${doc.sinConfirmar > 0 ? `<span class="text-amber-700 font-bold">${doc.sinConfirmar} sin confirmar</span>` : ''}
+                                    ${(doc.sinRegistro + doc.rehabilitadas) > 0 ? `<span class="text-rose-700 font-bold">${doc.sinRegistro + doc.rehabilitadas} sin reg./rehab.</span>` : ''}
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Métricas de Alumnos, Barra de Progreso y Botón Recordatorio -->
                         <div class="flex flex-wrap sm:flex-nowrap items-center justify-between lg:justify-end gap-4 pl-11 lg:pl-0">
-                            <!-- Alumnos -->
-                            <div class="text-left sm:text-right min-w-[125px]">
-                                <div class="text-xs font-bold text-slate-800">
-                                    ${doc.calificados} / ${doc.inscritos} <span class="font-normal text-slate-500">alumnos</span>
-                                </div>
-                                <div class="text-[11px] ${doc.pendientes > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600 font-medium'}">
-                                    ${doc.pendientes > 0 ? `${doc.pendientes} pendientes` : '0 pendientes'}
-                                </div>
+                            <div class="text-left sm:text-right min-w-[120px]">
+                                <div class="text-xs font-bold text-slate-800">${doc.calificados} / ${doc.inscritos} <span class="font-normal text-slate-500">alumnos</span></div>
+                                <div class="text-[11px] ${doc.pendientes > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600'}">${doc.pendientes} pendientes</div>
                             </div>
 
-                            <!-- Barra de Progreso -->
                             <div class="w-28 sm:w-32">
                                 <div class="flex justify-between text-[11px] font-bold mb-1">
                                     <span class="text-slate-600">Avance</span>
-                                    <span class="text-slate-800">${pctAvance}%</span>
+                                    <span class="text-slate-800">${pct}%</span>
                                 </div>
                                 <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                    <div class="${progressColor} h-full rounded-full" style="width: ${pctAvance}%"></div>
+                                    <div class="${barColor} h-full rounded-full" style="width: ${pct}%"></div>
                                 </div>
                             </div>
 
-                            <!-- Botón Acción Rápida: Generar Recordatorio -->
                             <div class="no-print" onclick="event.stopPropagation()">
-                                ${!isComplete ? `
-                                    <button onclick="openReminderModal('${doc.RFC}')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-ipn-guinda hover:bg-ipn-guindaDark text-white shadow-sm transition cursor-pointer" title="Generar oficio/correo de recordatorio con las secuencias pendientes">
-                                        <i class="fa-solid fa-envelope"></i>
-                                        <span>Recordatorio</span>
-                                    </button>
-                                ` : `
-                                    <button onclick="openReminderModal('${doc.RFC}')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer" title="Ver resumen de cumplimiento">
-                                        <i class="fa-solid fa-file-lines"></i>
-                                        <span>Resumen</span>
-                                    </button>
-                                `}
+                                <button type="button" onclick="openReminderModal('${doc.RFC}')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold ${!isComplete ? 'bg-ipn-guinda hover:bg-ipn-guindaDark text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'} transition cursor-pointer">
+                                    <i class="fa-solid ${!isComplete ? 'fa-envelope' : 'fa-file-lines'}"></i>
+                                    <span>${!isComplete ? 'Recordatorio' : 'Resumen'}</span>
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Detalle Expandible de Secuencias / Materias del Docente -->
-                    <div class="${isExpanded ? 'block' : 'hidden'} border-t border-slate-200 bg-slate-50/70 p-3 sm:p-4 overflow-x-auto custom-scrollbar">
+                    <div class="${isExp ? 'block' : 'hidden'} border-t border-slate-200 bg-slate-50/70 p-3 sm:p-4 overflow-x-auto custom-scrollbar">
                         <table class="min-w-full divide-y divide-slate-200 text-xs bg-white rounded-lg border border-slate-200 overflow-hidden">
                             <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
                                 <tr>
@@ -1621,12 +1520,10 @@
                                             <div class="text-[11px] text-slate-500">${a.Carrera}</div>
                                         </td>
                                         <td class="px-3 py-2.5 text-center font-bold text-slate-700">${a.SEMESTRE}.º</td>
-                                        <td class="px-3 py-2.5 whitespace-nowrap">${getDeadlineIndicatorHTML(a.Fecha_limite, isConf)}</td>
+                                        <td class="px-3 py-2.5 whitespace-nowrap">${getDeadlineHTML(a.Fecha_limite, isConf)}</td>
                                         <td class="px-3 py-2.5 whitespace-nowrap">${getStatusBadgeHTML(a.Estatus_acta)}</td>
                                         <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono">
-                                            <span class="text-slate-700">${a.Inscritos}</span> /
-                                            <span class="text-emerald-700 font-bold">${a.Calificados}</span> /
-                                            <span class="${a.Pendientes > 0 ? 'text-rose-600 font-extrabold' : 'text-slate-400'}">${a.Pendientes}</span>
+                                            ${a.Inscritos} / <span class="text-emerald-700 font-bold">${a.Calificados}</span> / <span class="${a.Pendientes > 0 ? 'text-rose-600 font-extrabold' : 'text-slate-400'}">${a.Pendientes}</span>
                                         </td>
                                     </tr>`;
                                 }).join('')}
@@ -1637,34 +1534,21 @@
             }).join('');
         }
 
-        function toggleDocenteAccordion(rfc) {
-            if (expandedDocentes.has(rfc)) {
-                expandedDocentes.delete(rfc);
-            } else {
-                expandedDocentes.add(rfc);
-            }
+        function toggleDocente(rfc) {
+            if (expandedDocentes.has(rfc)) expandedDocentes.delete(rfc);
+            else expandedDocentes.add(rfc);
             renderDocentesView();
         }
 
         function expandCollapseAllDocentes(expand) {
-            if (expand) {
-                filteredRecords.forEach(r => expandedDocentes.add(r.RFC || r.Nombre));
-            } else {
-                expandedDocentes.clear();
-            }
+            if (expand) filteredRecords.forEach(r => expandedDocentes.add(r.RFC || r.Nombre));
+            else expandedDocentes.clear();
             renderDocentesView();
         }
 
-        // ============================================================================
-        // 10. VISTA 2: TABLA OPERATIVA COMPLETA DE ACTAS (ORDENABLE Y PAGINADA)
-        // ============================================================================
         function sortActasTable(col) {
-            if (actasSortCol === col) {
-                actasSortAsc = !actasSortAsc;
-            } else {
-                actasSortCol = col;
-                actasSortAsc = true;
-            }
+            if (actasSortCol === col) actasSortAsc = !actasSortAsc;
+            else { actasSortCol = col; actasSortAsc = true; }
             renderActasTable();
         }
 
@@ -1683,39 +1567,31 @@
         function renderActasTable() {
             const tbody = document.getElementById('actasTableBody');
             const total = filteredRecords.length;
-
             if (total === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-10 text-center text-slate-500">No hay actas que coincidan con los criterios seleccionados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-10 text-center text-slate-500">No hay actas que coincidan.</td></tr>`;
                 document.getElementById('paginationInfo').textContent = 'Mostrando 0 de 0 actas';
                 document.getElementById('pageIndicator').textContent = 'Página 1';
                 return;
             }
 
-            // Ordenar copia
             const sorted = [...filteredRecords].sort((a, b) => {
-                let valA = a[actasSortCol];
-                let valB = b[actasSortCol];
-                if (typeof valA === 'number' && typeof valB === 'number') {
-                    return actasSortAsc ? valA - valB : valB - valA;
-                }
-                return actasSortAsc
-                    ? String(valA || '').localeCompare(String(valB || ''))
-                    : String(valB || '').localeCompare(String(valA || ''));
+                const vA = a[actasSortCol], vB = b[actasSortCol];
+                if (typeof vA === 'number' && typeof vB === 'number') return actasSortAsc ? vA - vB : vB - vA;
+                return actasSortAsc ? String(vA || '').localeCompare(String(vB || '')) : String(vB || '').localeCompare(String(vA || ''));
             });
 
             const totalPages = Math.ceil(total / pageSize);
             if (currentPage > totalPages) currentPage = totalPages;
-            const startIdx = (currentPage - 1) * pageSize;
-            const endIdx = Math.min(startIdx + pageSize, total);
-            const pageItems = sorted.slice(startIdx, endIdx);
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, total);
 
-            tbody.innerHTML = pageItems.map(r => {
+            tbody.innerHTML = sorted.slice(start, end).map(r => {
                 const isConf = r.Estatus_acta === 'ACTA CAPTURADA Y CONFIRMADA' || r.Estatus_acta === 'ACTA REHABILITADA Y CAPTURADA';
                 return `
                 <tr class="hover:bg-slate-50 transition">
                     <td class="px-3 py-3 max-w-[190px]">
-                        <div class="font-bold text-slate-800 truncate" title="${r.Jefatura}">${r.Jefatura}</div>
-                        <div class="text-[11px] text-slate-500 truncate" title="${r.Carrera}">${r.Carrera}</div>
+                        <div class="font-bold text-slate-800 truncate">${r.Jefatura}</div>
+                        <div class="text-[11px] text-slate-500 truncate">${r.Carrera}</div>
                     </td>
                     <td class="px-3 py-3 whitespace-nowrap">
                         <div class="font-mono font-bold text-ipn-guinda">${r.Secuencia}</div>
@@ -1730,65 +1606,56 @@
                         <div class="font-semibold text-slate-800">${r.Nombre}</div>
                         <div class="text-[11px] font-mono text-slate-500">${r.RFC}</div>
                     </td>
-                    <td class="px-3 py-3 whitespace-nowrap">
-                        <div>${getDeadlineIndicatorHTML(r.Fecha_limite, isConf)}</div>
-                    </td>
+                    <td class="px-3 py-3 whitespace-nowrap">${getDeadlineHTML(r.Fecha_limite, isConf)}</td>
                     <td class="px-3 py-3 whitespace-nowrap">${getStatusBadgeHTML(r.Estatus_acta)}</td>
                     <td class="px-3 py-3 text-right whitespace-nowrap font-mono">
                         <div class="font-bold text-slate-800">${r.Calificados} / ${r.Inscritos}</div>
-                        <div class="text-[11px] ${r.Pendientes > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600'}">
-                            ${r.Pendientes > 0 ? `${r.Pendientes} pend.` : 'Completo'}
-                        </div>
+                        <div class="text-[11px] ${r.Pendientes > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600'}">${r.Pendientes} pend.</div>
                     </td>
                 </tr>`;
             }).join('');
 
-            document.getElementById('paginationInfo').textContent = `Mostrando ${startIdx + 1} a ${endIdx} de ${total} actas`;
+            document.getElementById('paginationInfo').textContent = `Mostrando ${start + 1} a ${end} de ${total} actas`;
             document.getElementById('pageIndicator').textContent = `Página ${currentPage} de ${totalPages}`;
             document.getElementById('btnPrevPage').disabled = currentPage <= 1;
             document.getElementById('btnNextPage').disabled = currentPage >= totalPages;
         }
 
         // ============================================================================
-        // 11. GENERADOR DE RECORDATORIO INSTITUCIONAL (MODAL)
+        // 7. MODALES (RECORDATORIO Y GUÍA RÁPIDA), EXPORTACIÓN Y TOAST
         // ============================================================================
         function openReminderModal(rfc) {
-            const docActas = filteredRecords.filter(r => r.RFC === rfc);
-            if (docActas.length === 0) return;
+            const actas = filteredRecords.filter(r => r.RFC === rfc);
+            if (!actas.length) return;
 
-            const docName = docActas[0].Nombre;
-            const periodo = docActas[0].Periodo_escolar || '20271';
-            const evaluacion = docActas[0].Evaluacion || 'Extraordinario';
-            const selectedJefatura = document.getElementById('jefaturaSelector').value;
-            const remitente = selectedJefatura === 'ALL'
-                ? 'Subdirección Académica / Gestión Escolar - ESCA Santo Tomás'
-                : `Jefatura de Carrera de ${selectedJefatura} - ESCA Santo Tomás`;
+            const nombre = actas[0].Nombre;
+            const periodo = actas[0].Periodo_escolar || '—';
+            const evalName = actas[0].Evaluacion || 'Evaluación';
+            const jefSel = document.getElementById('jefaturaSelector').value;
+            const remitente = jefSel === 'ALL' ? 'Subdirección Académica - ESCA Santo Tomás' : `Jefatura de ${jefSel} - ESCA Santo Tomás`;
 
-            const pendingActas = docActas.filter(a =>
+            const pendActas = actas.filter(a =>
                 (a.Estatus_acta !== 'ACTA CAPTURADA Y CONFIRMADA' && a.Estatus_acta !== 'ACTA REHABILITADA Y CAPTURADA') || a.Pendientes > 0
             );
 
             let subject = '';
             let body = '';
-
-            if (pendingActas.length > 0) {
-                subject = `RECORDATORIO URGENTE: Cierre y Confirmación de Actas SAES (${evaluacion} - Periodo ${periodo})`;
-                const listText = pendingActas.map((a, idx) =>
-                    `${idx + 1}. Secuencia: ${a.Secuencia} (${a.Modalidad}) | Clave: ${a.clave} - ${a.Materia} (${a.SEMESTRE}.º Sem.)\n   - Jefatura / Carrera: ${a.Jefatura} (${a.Carrera})\n   - Estatus actual en SAES: ${a.Estatus_acta}\n   - Avance: ${a.Calificados} de ${a.Inscritos} alumnos (${a.Pendientes} pendientes)\n   - Fecha límite SAES: ${a.Fecha_limite}`
+            if (pendActas.length > 0) {
+                subject = `RECORDATORIO: Cierre y Confirmación de Actas SAES (${evalName} - ${periodo})`;
+                const detalle = pendActas.map((a, i) =>
+                    `${i + 1}. Secuencia: ${a.Secuencia} (${a.Modalidad}) | Clave: ${a.clave} - ${a.Materia} (${a.SEMESTRE}.º Sem.)\n   Estatus: ${a.Estatus_acta} | Alumnos: ${a.Calificados}/${a.Inscritos} (${a.Pendientes} pend.) | Límite: ${a.Fecha_limite}`
                 ).join('\n\n');
-
-                body = `Estimado(a) Prof(a). ${docName}\nRFC: ${rfc}\nPresente.\n\nPor medio de la presente, y de acuerdo con el corte de monitoreo del Sistema de Administración Escolar (SAES) correspondiente a la evaluación ${evaluacion} del periodo escolar ${periodo}, le solicitamos atentamente concluir a la brevedad el registro y CONFIRMACIÓN de las siguientes actas a su cargo:\n\n${listText}\n\nNota importante: En caso de que el estatus indique "ACTA CAPTURADA PERO NO CONFIRMADA", es indispensable ingresar a SAES y ejecutar el botón de confirmación para que las calificaciones tengan validez oficial.\n\nAgradecemos de antemano su valioso apoyo y compromiso institucional.\n\nAtentamente,\n"La Técnica al Servicio de la Patria"\n${remitente}\nInstituto Politécnico Nacional`;
+                body = `Estimado(a) Prof(a). ${nombre}\nRFC: ${rfc}\nPresente.\n\nPor medio de la presente le solicitamos atentamente concluir y CONFIRMAR en SAES (${evalName}, periodo ${periodo}) las siguientes actas:\n\n${detalle}\n\nAtentamente,\n"La Técnica al Servicio de la Patria"\n${remitente}\nIPN`;
             } else {
-                subject = `CONSTANCIA DE CUMPLIMIENTO: Captura SAES (${evaluacion} - Periodo ${periodo})`;
-                body = `Estimado(a) Prof(a). ${docName}\nRFC: ${rfc}\nPresente.\n\nLe informamos que, conforme al reporte de seguimiento en SAES correspondiente a la evaluación ${evaluacion} del periodo ${periodo}, la totalidad de sus actas asignadas (${docActas.length} grupos) se encuentran debidamente CAPTURADAS Y CONFIRMADAS al 100%.\n\nAgradecemos su puntualidad y compromiso con la comunidad politécnica.\n\nAtentamente,\n"La Técnica al Servicio de la Patria"\n${remitente}\nInstituto Politécnico Nacional`;
+                subject = `CUMPLIMIENTO DE CAPTURA SAES (${evalName} - ${periodo})`;
+                body = `Estimado(a) Prof(a). ${nombre}\nRFC: ${rfc}\nPresente.\n\nLe informamos que la totalidad de sus actas (${actas.length}) en la vista actual se encuentran capturadas y confirmadas.\n\nAtentamente,\n"La Técnica al Servicio de la Patria"\n${remitente}\nIPN`;
             }
 
-            document.getElementById('modalDocenteSubtitle').textContent = `${docName} (${rfc}) — ${pendingActas.length} acta(s) por atender`;
+            document.getElementById('modalDocenteSubtitle').textContent = `${nombre} (${rfc}) — ${pendActas.length} acta(s) por atender`;
             document.getElementById('reminderSubject').value = subject;
             document.getElementById('reminderBody').value = body;
             document.getElementById('mailtoLink').href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             document.getElementById('copyFeedback').classList.add('hidden');
-
             document.getElementById('reminderModal').classList.remove('hidden');
         }
 
@@ -1797,24 +1664,32 @@
         }
 
         function copyReminderText() {
-            const textarea = document.getElementById('reminderBody');
-            textarea.select();
-            textarea.setSelectionRange(0, 99999);
+            const ta = document.getElementById('reminderBody');
+            ta.select();
+            ta.setSelectionRange(0, 99999);
             try {
                 document.execCommand('copy');
-                const fb = document.getElementById('copyFeedback');
-                fb.classList.remove('hidden');
-                showToast('Texto del recordatorio copiado al portapapeles.', 'success');
-            } catch (err) {
-                showToast('No se pudo copiar automáticamente. Seleccione el texto y presione Ctrl+C.', 'error');
+                document.getElementById('copyFeedback').classList.remove('hidden');
+                showToast('Texto copiado al portapapeles.', 'success');
+            } catch (e) {
+                showToast('Selecciona el texto y copia con Ctrl+C.', 'error');
             }
         }
 
-        // ============================================================================
-        // 12. EXPORTACIÓN A EXCEL (.XLSX) Y DESCARGA DE PLANTILLA OFICIAL (21 COLS)
-        // ============================================================================
-        function mapRecordsTo21Columns(records) {
-            return records.map(r => ({
+        function openGuideModal() {
+            document.getElementById('guideModal').classList.remove('hidden');
+        }
+
+        function closeGuideModal() {
+            document.getElementById('guideModal').classList.add('hidden');
+        }
+
+        function exportFilteredToExcel() {
+            if (!filteredRecords.length) {
+                showToast('No hay registros filtrados para exportar.', 'error');
+                return;
+            }
+            const rows = filteredRecords.map(r => ({
                 'Periodo_escolar': r.Periodo_escolar,
                 'Evaluacion': r.Evaluacion,
                 'RFC': r.RFC,
@@ -1837,108 +1712,22 @@
                 'CARR': r.CARR,
                 'Jefatura': r.Jefatura
             }));
-        }
-
-        function exportCurrentViewToExcel() {
-            if (filteredRecords.length === 0) {
-                showToast('No hay registros filtrados para exportar.', 'error');
-                return;
-            }
-            const exportData = mapRecordsTo21Columns(filteredRecords);
-            const ws = XLSX.utils.json_to_sheet(exportData);
+            const ws = XLSX.utils.json_to_sheet(rows);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Avance_Captura_SAES');
-
-            const jefCode = document.getElementById('jefaturaSelector').value === 'ALL'
-                ? 'GLOBAL'
-                : document.getElementById('jefaturaSelector').value.replace(/\s+/g, '_').substring(0, 18);
+            XLSX.utils.book_append_sheet(wb, ws, 'Avance_SAES');
             const dateStr = new Date().toISOString().slice(0, 10);
-            XLSX.writeFile(wb, `Reporte_Avance_SAES_${jefCode}_${dateStr}.xlsx`);
-            showToast(`Reporte exportado con ${filteredRecords.length} registros (21 columnas).`, 'success');
+            XLSX.writeFile(wb, `Avance_Captura_SAES_${dateStr}.xlsx`);
+            showToast(`Exportados ${filteredRecords.length} registros a Excel.`, 'success');
         }
 
         function downloadTemplateExcel() {
-            const sampleRows = [
-                {
-                    'Periodo_escolar': '20271',
-                    'Evaluacion': 'Extraordinario',
-                    'RFC': 'AAAC680829',
-                    'Nombre': 'ARAIZA AGUILAR JOSE CARMEN',
-                    'Fecha aplicación': '2026-11-18 00:00',
-                    'Fecha límite SAES': '2026-11-22 23:59',
-                    'Estatus_acta': 'ACTA CAPTURADA Y CONFIRMADA',
-                    'Porcentaje_eval': 100,
-                    'Carrera': 'C-CONTADOR PÚBLICO',
-                    'Plan_estud': 20,
-                    'Especialidad': '0',
-                    'Secuencia': '4CV21',
-                    'Cve_Materia': 'C434',
-                    'Materia': 'ESTUDIO DEL CAPITAL CONTABLE',
-                    'Inscritos': 12,
-                    'Calificados': 12,
-                    'Pendientes': 0,
-                    'clave': '4CV21C434',
-                    'SEMESTRE': '4',
-                    'CARR': 'C',
-                    'Jefatura': 'CONTADOR PÚBLICO'
-                },
-                {
-                    'Periodo_escolar': '20271',
-                    'Evaluacion': 'Extraordinario',
-                    'RFC': 'SARM740311',
-                    'Nombre': 'SALAZAR RUIZ MARIA ELENA',
-                    'Fecha aplicación': '2026-11-19 00:00',
-                    'Fecha límite SAES': '2026-11-23 23:59',
-                    'Estatus_acta': 'SIN REGISTRO',
-                    'Porcentaje_eval': 100,
-                    'Carrera': 'I-COMERCIO INTERNACIONAL NO ESC',
-                    'Plan_estud': 9,
-                    'Especialidad': 'I',
-                    'Secuencia': '1IXA2',
-                    'Cve_Materia': 'I104',
-                    'Materia': 'MATEMATICAS FINANCIERAS APLICADAS',
-                    'Inscritos': 22,
-                    'Calificados': 0,
-                    'Pendientes': 22,
-                    'clave': '1IXA2I104',
-                    'SEMESTRE': '1',
-                    'CARR': 'I',
-                    'Jefatura': 'FORMACIÓN BÁSICA'
-                }
-            ];
-            const ws = XLSX.utils.json_to_sheet(sampleRows);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Plantilla_origen_21_Cols');
-            XLSX.writeFile(wb, 'Plantilla_origen_SAES_21_Columnas.xlsx');
-            showToast('Plantilla Excel con las 21 columnas de origen.xlsx descargada.', 'success');
-        }
-
-        function exportCurrentViewToExcel() {
-            if (filteredRecords.length === 0) {
-                showToast('No hay registros filtrados para exportar.', 'error');
-                return;
-            }
-            const exportData = mapRecordsTo17Columns(filteredRecords);
-            const ws = XLSX.utils.json_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Avance_Captura_SAES');
-
-            const careerCode = document.getElementById('careerSelector').value === 'ALL'
-                ? 'GLOBAL'
-                : document.getElementById('careerSelector').value.split('-')[0];
-            const dateStr = new Date().toISOString().slice(0, 10);
-            XLSX.writeFile(wb, `Reporte_Avance_SAES_${careerCode}_${dateStr}.xlsx`);
-            showToast(`Reporte exportado con ${filteredRecords.length} registros.`, 'success');
-        }
-
-        function downloadTemplateExcel() {
-            const sampleRow = [{
+            const sample = [{
                 'Periodo_escolar': '20271',
-                'Evaluacion': '2do Departamental',
+                'Evaluacion': 'Extraordinario',
                 'RFC': 'AAAC680829',
                 'Nombre': 'ARAIZA AGUILAR JOSE CARMEN',
-                'Fecha aplicación': '2026-11-05 00:00',
-                'Fecha límite SAES': '2026-11-09 23:59',
+                'Fecha aplicación': '2026-11-18 00:00',
+                'Fecha límite SAES': '2026-11-22 23:59',
                 'Estatus_acta': 'ACTA CAPTURADA Y CONFIRMADA',
                 'Porcentaje_eval': 100,
                 'Carrera': 'C-CONTADOR PÚBLICO',
@@ -1947,41 +1736,36 @@
                 'Secuencia': '4CV21',
                 'Cve_Materia': 'C434',
                 'Materia': 'ESTUDIO DEL CAPITAL CONTABLE',
-                'Inscritos': 42,
-                'Calificados': 42,
-                'Pendientes': 0
+                'Inscritos': 12,
+                'Calificados': 12,
+                'Pendientes': 0,
+                'clave': '4CV21C434',
+                'SEMESTRE': '4',
+                'CARR': 'C',
+                'Jefatura': 'CONTADOR PÚBLICO'
             }];
-            const ws = XLSX.utils.json_to_sheet(sampleRow);
+            const ws = XLSX.utils.json_to_sheet(sample);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Plantilla_SAES_17_Cols');
-            XLSX.writeFile(wb, 'Plantilla_SAES_Avance_Captura_ESCA.xlsx');
-            showToast('Plantilla Excel con las 17 columnas oficiales descargada.', 'success');
+            XLSX.utils.book_append_sheet(wb, ws, 'Plantilla_21_Cols');
+            XLSX.writeFile(wb, 'Plantilla_SAES_21_Columnas.xlsx');
+            showToast('Plantilla de 21 columnas descargada.', 'success');
         }
 
-        // ============================================================================
-        // 13. UTILIDAD DE NOTIFICACIONES TOAST
-        // ============================================================================
-        let toastTimeout = null;
+        let toastTimer = null;
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toastNotification');
             const icon = document.getElementById('toastIcon');
-            const msg = document.getElementById('toastMessage');
-
-            msg.textContent = message;
+            document.getElementById('toastMessage').textContent = message;
             icon.className = type === 'error'
                 ? 'fa-solid fa-circle-exclamation text-rose-400 text-base'
                 : 'fa-solid fa-circle-check text-emerald-400 text-base';
-
             toast.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            });
-
-            if (toastTimeout) clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => {
+            requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
                 toast.classList.add('translate-y-2', 'opacity-0');
                 setTimeout(() => toast.classList.add('hidden'), 300);
-            }, 3500);
+            }, 3200);
         }
     </script>
 </body>
