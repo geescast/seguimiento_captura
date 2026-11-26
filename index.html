@@ -232,7 +232,7 @@
 
           <div class="bg-white rounded-2xl border border-emerald-200 p-4 shadow-sm">
             <div class="flex items-center justify-between text-xs font-semibold text-emerald-700 uppercase">
-              <span>Confirmadas</span>
+              <span>Confirmadas / 100%</span>
               <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-circle-check"></i></span>
             </div>
             <div class="mt-2">
@@ -248,7 +248,7 @@
             </div>
             <div class="mt-2">
               <span id="kpiNoConfirmadas" class="text-2xl font-extrabold text-amber-600">0</span>
-              <p class="text-xs text-amber-700/80 mt-1">Capturadas sin cierre SAES</p>
+              <p class="text-xs text-amber-700/80 mt-1">Con captura pendiente</p>
             </div>
           </div>
 
@@ -352,7 +352,7 @@
                     <th class="px-4 py-3 text-left">Correo Institucional</th>
                     <th class="px-4 py-3 text-left">Jefatura(s)</th>
                     <th class="px-4 py-3 text-center">Actas</th>
-                    <th class="px-4 py-3 text-center">Confirmadas</th>
+                    <th class="px-4 py-3 text-center">Resueltas</th>
                     <th class="px-4 py-3 text-center">Pendientes</th>
                     <th class="px-4 py-3 text-left">Avance</th>
                     <th class="px-4 py-3 text-right no-print">Acciones</th>
@@ -378,7 +378,7 @@
                     <th class="px-4 py-3 text-center">Docentes</th>
                     <th class="px-4 py-3 text-center">Con Pendientes</th>
                     <th class="px-4 py-3 text-center">Total Actas</th>
-                    <th class="px-4 py-3 text-center text-emerald-700">Confirmadas</th>
+                    <th class="px-4 py-3 text-center text-emerald-700">Confirmadas / 100%</th>
                     <th class="px-4 py-3 text-center text-amber-700">No Confirmadas</th>
                     <th class="px-4 py-3 text-center text-rose-700">Sin Registro / Rehab.</th>
                     <th class="px-4 py-3 text-left">Avance Alumnos</th>
@@ -573,7 +573,7 @@
       <div class="p-6 space-y-3 text-sm text-slate-700">
         <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> en la barra superior de filtros para revisar el avance de actas, alumnos calificados y docentes con pendientes.</p>
         <p><strong>2. Vistas disponibles:</strong> Alterna entre <strong>Por Docente</strong> (para desplegar sus grupos y enviar recordatorio), <strong>Por Jefatura</strong> (comparativa general) y <strong>Detalle de Actas</strong>.</p>
-        <p><strong>3. Estatus de captura completa sin cierre:</strong> Cuando un acta no está confirmada en SAES pero ya tiene calificados a todos los inscritos, se muestra en <strong>Capturada al 100 % sin cerrar acta</strong> en verde claro.</p>
+        <p><strong>3. Captura al 100 % sin cerrar acta:</strong> Cuando todos los alumnos inscritos ya están calificados pero el acta aún no figura como confirmada, se muestra en <strong>Capturada al 100 % sin cerrar acta</strong> en verde claro y no se contabiliza como pendiente para el docente, ya que Gestión Escolar puede cerrarla.</p>
         <p><strong>4. Actualización del corte:</strong> Gestión Escolar actualiza los registros desde la pestaña <strong>Actualizar Origen</strong> sin necesidad de modificar el código de la página.</p>
       </div>
       <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 text-right">
@@ -785,6 +785,12 @@
         calificados >= inscritos &&
         estatus !== 'ACTA CAPTURADA Y CONFIRMADA'
       );
+    }
+
+    // Un acta NO está pendiente si ya está confirmada o si ya tiene el 100 % calificado (Gestión puede cerrarla)
+    function isActaResuelta(record) {
+      if (!record) return false;
+      return record.estatus === 'ACTA CAPTURADA Y CONFIRMADA' || isCapturadaAlCienSinCerrar(record);
     }
 
     function getDisplayEstatusLabel(record) {
@@ -1151,7 +1157,7 @@
         if (sem !== 'ALL' && r.semestre !== sem) return false;
         if (est !== 'ALL') {
           if (est === 'PENDIENTES_ALL') {
-            if (r.estatus === 'ACTA CAPTURADA Y CONFIRMADA') return false;
+            if (isActaResuelta(r)) return false;
           } else if (est === 'CAPTURADA_100_SIN_CERRAR') {
             if (!isCapturadaAlCienSinCerrar(r)) return false;
           } else if (r.estatus !== est) {
@@ -1184,8 +1190,8 @@
     function updateKPIs() {
       const totalActas = filteredRecords.length;
       const docentesSet = new Set(filteredRecords.map(r => r.rfc));
-      let confirmadas = 0;
-      let noConfirmadas = 0;
+      let resueltas = 0;
+      let noConfirmadasPend = 0;
       let sinRegistroRehab = 0;
       let totalInscritos = 0;
       let totalCalificados = 0;
@@ -1194,19 +1200,21 @@
       filteredRecords.forEach(r => {
         totalInscritos += r.inscritos;
         totalCalificados += r.calificados;
-        totalPendientes += r.pendientes;
 
-        if (r.estatus === 'ACTA CAPTURADA Y CONFIRMADA') {
-          confirmadas++;
-        } else if (r.estatus === 'ACTA CAPTURADA PERO NO CONFIRMADA') {
-          noConfirmadas++;
+        if (isActaResuelta(r)) {
+          resueltas++;
         } else {
-          sinRegistroRehab++;
+          totalPendientes += r.pendientes;
+          if (r.estatus === 'ACTA CAPTURADA PERO NO CONFIRMADA') {
+            noConfirmadasPend++;
+          } else {
+            sinRegistroRehab++;
+          }
         }
       });
 
       const pctAlumnos = totalInscritos > 0 ? ((totalCalificados / totalInscritos) * 100) : 0;
-      const pctActasConf = totalActas > 0 ? ((confirmadas / totalActas) * 100) : 0;
+      const pctActasResueltas = totalActas > 0 ? ((resueltas / totalActas) * 100) : 0;
 
       document.getElementById('kpiAvanceAlumnos').textContent = `${pctAlumnos.toFixed(1)}%`;
       document.getElementById('kpiAlumnosRatio').textContent = `${totalCalificados.toLocaleString('es-MX')} / ${totalInscritos.toLocaleString('es-MX')}`;
@@ -1214,9 +1222,9 @@
 
       document.getElementById('kpiTotalActas').textContent = totalActas.toLocaleString('es-MX');
       document.getElementById('kpiTotalDocentes').textContent = docentesSet.size.toLocaleString('es-MX');
-      document.getElementById('kpiConfirmadas').textContent = confirmadas.toLocaleString('es-MX');
-      document.getElementById('kpiConfirmadasPct').textContent = `${pctActasConf.toFixed(1)}% del total de actas`;
-      document.getElementById('kpiNoConfirmadas').textContent = noConfirmadas.toLocaleString('es-MX');
+      document.getElementById('kpiConfirmadas').textContent = resueltas.toLocaleString('es-MX');
+      document.getElementById('kpiConfirmadasPct').textContent = `${pctActasResueltas.toFixed(1)}% del total de actas`;
+      document.getElementById('kpiNoConfirmadas').textContent = noConfirmadasPend.toLocaleString('es-MX');
       document.getElementById('kpiSinRegistro').textContent = sinRegistroRehab.toLocaleString('es-MX');
       document.getElementById('kpiAlumnosPendientes').textContent = totalPendientes.toLocaleString('es-MX');
 
@@ -1225,19 +1233,20 @@
     }
 
     function updateCharts() {
-      let conf = 0, noConf = 0, sinReg = 0, rehab = 0;
+      let conf = 0, cienSinCerrar = 0, noConf = 0, sinReg = 0, rehab = 0;
       const jefMap = {};
 
       filteredRecords.forEach(r => {
         if (r.estatus === 'ACTA CAPTURADA Y CONFIRMADA') conf++;
+        else if (isCapturadaAlCienSinCerrar(r)) cienSinCerrar++;
         else if (r.estatus === 'ACTA CAPTURADA PERO NO CONFIRMADA') noConf++;
         else if (r.estatus.includes('REHABILITADA')) rehab++;
         else sinReg++;
 
         if (!jefMap[r.jefatura]) {
-          jefMap[r.jefatura] = { conf: 0, pend: 0 };
+          jefMap[r.jefatura] = { resueltas: 0, pend: 0 };
         }
-        if (r.estatus === 'ACTA CAPTURADA Y CONFIRMADA') jefMap[r.jefatura].conf++;
+        if (isActaResuelta(r)) jefMap[r.jefatura].resueltas++;
         else jefMap[r.jefatura].pend++;
       });
 
@@ -1246,10 +1255,10 @@
       chartEstatusInstance = new Chart(ctxEst, {
         type: 'doughnut',
         data: {
-          labels: ['Confirmadas', 'Sin Confirmar', 'Sin Registro', 'Rehabilitadas'],
+          labels: ['Confirmadas', '100% sin cerrar', 'Sin Confirmar', 'Sin Registro', 'Rehabilitadas'],
           datasets: [{
-            data: [conf, noConf, sinReg, rehab],
-            backgroundColor: ['#10b981', '#f59e0b', '#e11d48', '#8b5cf6'],
+            data: [conf, cienSinCerrar, noConf, sinReg, rehab],
+            backgroundColor: ['#059669', '#6ee7b7', '#f59e0b', '#e11d48', '#8b5cf6'],
             borderWidth: 2,
             borderColor: '#ffffff'
           }]
@@ -1272,8 +1281,8 @@
           labels: jefLabels.map(l => l.length > 22 ? l.slice(0, 20) + '…' : l),
           datasets: [
             {
-              label: 'Confirmadas',
-              data: jefLabels.map(l => jefMap[l].conf),
+              label: 'Confirmadas / 100%',
+              data: jefLabels.map(l => jefMap[l].resueltas),
               backgroundColor: '#10b981',
               borderRadius: 4
             },
@@ -1330,7 +1339,7 @@
             email: resolveDocenteEmail(r.rfc, r.nombre),
             jefaturas: new Set(),
             actas: [],
-            confirmadas: 0,
+            resueltas: 0,
             pendientes: 0,
             inscritos: 0,
             calificados: 0
@@ -1341,7 +1350,7 @@
         d.actas.push(r);
         d.inscritos += r.inscritos;
         d.calificados += r.calificados;
-        if (r.estatus === 'ACTA CAPTURADA Y CONFIRMADA') d.confirmadas++;
+        if (isActaResuelta(r)) d.resueltas++;
         else d.pendientes++;
       });
 
@@ -1365,7 +1374,7 @@
       }
 
       tbody.innerHTML = docentes.map((d, idx) => {
-        const pct = d.actas.length > 0 ? Math.round((d.confirmadas / d.actas.length) * 100) : 0;
+        const pct = d.actas.length > 0 ? Math.round((d.resueltas / d.actas.length) * 100) : 0;
         const barColor = pct === 100 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-rose-500';
         const jefList = [...d.jefaturas].join(', ');
         const detailId = `docDetail_${idx}`;
@@ -1403,7 +1412,7 @@
             <td class="px-4 py-3">${emailHtml}</td>
             <td class="px-4 py-3 text-xs text-slate-600 max-w-xs">${escapeHtml(jefList)}</td>
             <td class="px-4 py-3 text-center font-bold text-slate-700">${d.actas.length}</td>
-            <td class="px-4 py-3 text-center font-bold text-emerald-700">${d.confirmadas}</td>
+            <td class="px-4 py-3 text-center font-bold text-emerald-700">${d.resueltas}</td>
             <td class="px-4 py-3 text-center">
               ${d.pendientes > 0
                 ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">${d.pendientes}</span>`
@@ -1468,8 +1477,8 @@
             docentes: new Set(),
             docentesPend: new Set(),
             total: 0,
-            conf: 0,
-            noConf: 0,
+            resueltas: 0,
+            noConfPend: 0,
             sinReg: 0,
             inscritos: 0,
             calificados: 0
@@ -1481,11 +1490,11 @@
         j.inscritos += r.inscritos;
         j.calificados += r.calificados;
 
-        if (r.estatus === 'ACTA CAPTURADA Y CONFIRMADA') {
-          j.conf++;
+        if (isActaResuelta(r)) {
+          j.resueltas++;
         } else {
           j.docentesPend.add(r.rfc);
-          if (r.estatus === 'ACTA CAPTURADA PERO NO CONFIRMADA') j.noConf++;
+          if (r.estatus === 'ACTA CAPTURADA PERO NO CONFIRMADA') j.noConfPend++;
           else j.sinReg++;
         }
       });
@@ -1510,8 +1519,8 @@
               </span>
             </td>
             <td class="px-4 py-3 text-center font-bold text-slate-800">${j.total}</td>
-            <td class="px-4 py-3 text-center font-bold text-emerald-700">${j.conf}</td>
-            <td class="px-4 py-3 text-center font-bold text-amber-600">${j.noConf}</td>
+            <td class="px-4 py-3 text-center font-bold text-emerald-700">${j.resueltas}</td>
+            <td class="px-4 py-3 text-center font-bold text-amber-600">${j.noConfPend}</td>
             <td class="px-4 py-3 text-center font-bold text-rose-600">${j.sinReg}</td>
             <td class="px-4 py-3 w-40">
               <div class="flex items-center gap-2">
@@ -1593,7 +1602,7 @@
       const docObj = docentes.find(d => d.rfc === rfc);
       if (!docObj) return;
 
-      const pendientes = docObj.actas.filter(a => a.estatus !== 'ACTA CAPTURADA Y CONFIRMADA');
+      const pendientes = docObj.actas.filter(a => !isActaResuelta(a));
       const targetActas = pendientes.length ? pendientes : docObj.actas;
       const evalName = targetActas[0]?.evaluacion || 'Evaluación Departamental';
       const periodo = targetActas[0]?.periodo || '';
