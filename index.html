@@ -182,6 +182,7 @@
               <select id="filterEstatus" onchange="applyFilters()" class="w-full rounded-xl border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-ipn focus:outline-none">
                 <option value="ALL">Todos los Estatus</option>
                 <option value="PENDIENTES_ALL">Solo Pendientes (No confirmadas / Sin reg.)</option>
+                <option value="CAPTURADA_100_SIN_CERRAR">Capturada al 100 % sin cerrar acta</option>
                 <option value="ACTA CAPTURADA Y CONFIRMADA">Acta Capturada y Confirmada</option>
                 <option value="ACTA CAPTURADA PERO NO CONFIRMADA">Capturada pero No Confirmada</option>
                 <option value="SIN REGISTRO">Sin Registro</option>
@@ -572,7 +573,7 @@
       <div class="p-6 space-y-3 text-sm text-slate-700">
         <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> en la barra superior de filtros para revisar el avance de actas, alumnos calificados y docentes con pendientes.</p>
         <p><strong>2. Vistas disponibles:</strong> Alterna entre <strong>Por Docente</strong> (para desplegar sus grupos y enviar recordatorio), <strong>Por Jefatura</strong> (comparativa general) y <strong>Detalle de Actas</strong>.</p>
-        <p><strong>3. Envío de recordatorios:</strong> El sistema vincula automáticamente el correo de cada docente desde la hoja <strong>CORREOS</strong> (columna <strong>CorreoDocente</strong>) para abrir Outlook/Gmail con el oficio prellenado o copiar correos en bloque.</p>
+        <p><strong>3. Estatus de captura completa sin cierre:</strong> Cuando un acta no está confirmada en SAES pero ya tiene calificados a todos los inscritos, se muestra en <strong>Capturada al 100 % sin cerrar acta</strong> en verde claro.</p>
         <p><strong>4. Actualización del corte:</strong> Gestión Escolar actualiza los registros desde la pestaña <strong>Actualizar Origen</strong> sin necesidad de modificar el código de la página.</p>
       </div>
       <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 text-right">
@@ -587,7 +588,7 @@
     <span id="toastText">Listo</span>
   </div>
 
-  <!-- LÓGICA DE LA PLATAFORMA + SINCRONIZACIÓN FIREBASE -->
+  <!-- LÓGICA DE LA PLATAFORMA + SINCRONIZACIÓN FIREBASE CON RESPALDO SEGURO -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -596,6 +597,7 @@
     let db = null;
     let auth = null;
     let firebaseReady = false;
+    let cloudResolved = false;
     const appId = 'esca-saes-monitor';
 
     const firebaseConfig = {
@@ -607,6 +609,13 @@
       appId: "1:84307380170:web:0b20e4cde3c7bc48d27133",
       measurementId: "G-4MBYYY38S6"
     };
+
+    const initTimeout = setTimeout(() => {
+      if (!cloudResolved) {
+        cloudResolved = true;
+        window.loadLocalFallback();
+      }
+    }, 4000);
 
     async function initCloudSync() {
       try {
@@ -628,11 +637,19 @@
           if (user) {
             firebaseReady = true;
             subscribeToSharedDataset();
+          } else if (!cloudResolved) {
+            cloudResolved = true;
+            clearTimeout(initTimeout);
+            window.loadLocalFallback();
           }
         });
       } catch (err) {
         console.warn('Iniciando en modo local / respaldo:', err.message);
-        loadLocalFallback();
+        if (!cloudResolved) {
+          cloudResolved = true;
+          clearTimeout(initTimeout);
+          window.loadLocalFallback();
+        }
       }
     }
 
@@ -641,9 +658,12 @@
       const payloadRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte', 'payload');
 
       onSnapshot(metaRef, async (metaSnap) => {
+        cloudResolved = true;
+        clearTimeout(initTimeout);
+
         if (!metaSnap.exists()) {
           updateSyncBadge('Sin corte publicado', 'amber');
-          loadLocalFallback();
+          window.loadLocalFallback();
           return;
         }
         const meta = metaSnap.data();
@@ -659,16 +679,22 @@
         } catch (e) {
           console.error('Error leyendo payload compartido:', e);
           updateSyncBadge('Error de lectura', 'rose');
+          window.loadLocalFallback();
         }
       }, (error) => {
         console.error('Error snapshot Firestore:', error);
-        loadLocalFallback();
+        cloudResolved = true;
+        clearTimeout(initTimeout);
+        window.loadLocalFallback();
       });
     }
 
     window.saveDatasetToCloud = async function(rows, emailMap, meta, pinInput) {
-      if (!firebaseReady || !db) {
+      try {
         localStorage.setItem('esca_saes_dataset_v2', JSON.stringify({ rows, emailMap, meta }));
+      } catch (_) {}
+
+      if (!firebaseReady || !db) {
         window.applyLoadedDataset(rows, emailMap, meta);
         updateSyncBadge('Guardado localmente', 'emerald');
         return true;
@@ -696,20 +722,6 @@
       return true;
     };
 
-    function loadLocalFallback() {
-      try {
-        const cached = localStorage.getItem('esca_saes_dataset_v2') || localStorage.getItem('esca_saes_dataset_v1');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          window.applyLoadedDataset(parsed.rows || [], parsed.emailMap || {}, parsed.meta || {});
-          updateSyncBadge('Cargado desde memoria local', 'emerald');
-          return;
-        }
-      } catch (_) {}
-      updateSyncBadge('Esperando archivo origen', 'amber');
-      window.showEmptyState();
-    }
-
     function updateSyncBadge(text, color) {
       const badge = document.getElementById('syncStatusBadge');
       if (!badge) return;
@@ -722,6 +734,7 @@
       badge.innerHTML = `<i class="fa-solid fa-circle text-[8px]"></i> ${text}`;
     }
 
+    window.updateSyncBadge = updateSyncBadge;
     initCloudSync();
   </script>
 
@@ -761,7 +774,26 @@
       return s;
     }
 
-    // Normaliza nombres eliminando acentos, Ñ->N, signos y espacios dobles
+    // Detecta cuando todos los inscritos ya fueron calificados pero el acta no está confirmada
+    function isCapturadaAlCienSinCerrar(record) {
+      if (!record) return false;
+      const inscritos = Number(record.inscritos || 0);
+      const calificados = Number(record.calificados || 0);
+      const estatus = String(record.estatus || '').trim().toUpperCase();
+      return (
+        inscritos > 0 &&
+        calificados >= inscritos &&
+        estatus !== 'ACTA CAPTURADA Y CONFIRMADA'
+      );
+    }
+
+    function getDisplayEstatusLabel(record) {
+      if (isCapturadaAlCienSinCerrar(record)) {
+        return 'Capturada al 100 % sin cerrar acta';
+      }
+      return record ? record.estatus : 'SIN REGISTRO';
+    }
+
     function normalizeNameKey(name) {
       return String(name || '')
         .replace(/Ñ/gi, 'N')
@@ -773,7 +805,6 @@
         .trim();
     }
 
-    // Firma ordenada de palabras (para empatar aunque cambie orden nombre/apellidos)
     function normalizeTokenSignature(name) {
       const clean = normalizeNameKey(name);
       if (!clean) return '';
@@ -796,7 +827,6 @@
       return String(val).trim();
     }
 
-    // Extrae correos desde la hoja CORREOS y también recorre las demás hojas por si CorreoDocente está ahí
     function extractEmailsFromWorkbook(workbook) {
       const map = { byRfc: {}, byName: {}, byTokenKey: {}, count: 0 };
 
@@ -1043,6 +1073,20 @@
       }
     }
 
+    window.loadLocalFallback = function() {
+      try {
+        const cached = localStorage.getItem('esca_saes_dataset_v2') || localStorage.getItem('esca_saes_dataset_v1');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          window.applyLoadedDataset(parsed.rows || [], parsed.emailMap || {}, parsed.meta || {});
+          if (window.updateSyncBadge) window.updateSyncBadge('Cargado desde memoria local', 'emerald');
+          return;
+        }
+      } catch (_) {}
+      if (window.updateSyncBadge) window.updateSyncBadge('Esperando archivo origen', 'amber');
+      window.showEmptyState();
+    };
+
     window.applyLoadedDataset = function(rows, emailMap, meta) {
       allRecords = rows || [];
       directoryEmails = emailMap || { byRfc: {}, byName: {}, byTokenKey: {}, count: 0 };
@@ -1108,6 +1152,8 @@
         if (est !== 'ALL') {
           if (est === 'PENDIENTES_ALL') {
             if (r.estatus === 'ACTA CAPTURADA Y CONFIRMADA') return false;
+          } else if (est === 'CAPTURADA_100_SIN_CERRAR') {
+            if (!isCapturadaAlCienSinCerrar(r)) return false;
           } else if (r.estatus !== est) {
             return false;
           }
@@ -1340,7 +1386,7 @@
             <td class="py-2 px-3">${escapeHtml(a.jefatura)}</td>
             <td class="py-2 px-3">${escapeHtml(a.modalidad)}</td>
             <td class="py-2 px-3">${escapeHtml(a.fechaLimite)}</td>
-            <td class="py-2 px-3">${renderStatusBadge(a.estatus)}</td>
+            <td class="py-2 px-3">${renderStatusBadge(a.estatus, a)}</td>
             <td class="py-2 px-3 text-center font-semibold">${a.calificados}/${a.inscritos}</td>
           </tr>
         `).join('');
@@ -1515,7 +1561,7 @@
             <div class="text-[11px] text-slate-400">${escapeHtml(r.rfc)}</div>
           </td>
           <td class="px-3 py-2.5 text-xs text-slate-600">${escapeHtml(r.fechaLimite)}</td>
-          <td class="px-3 py-2.5">${renderStatusBadge(r.estatus)}</td>
+          <td class="px-3 py-2.5">${renderStatusBadge(r.estatus, r)}</td>
           <td class="px-3 py-2.5 text-center font-bold">${r.calificados} / ${r.inscritos}</td>
         </tr>
       `).join('');
@@ -1526,9 +1572,12 @@
           : `Mostrando ${filteredRecords.length} actas.`;
     }
 
-    function renderStatusBadge(status) {
+    function renderStatusBadge(status, record = null) {
+      if (isCapturadaAlCienSinCerrar(record)) {
+        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check-double"></i> Capturada al 100 % sin cerrar acta</span>`;
+      }
       if (status === 'ACTA CAPTURADA Y CONFIRMADA') {
-        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check"></i> Confirmada</span>`;
+        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-600 text-white"><i class="fa-solid fa-check"></i> Confirmada</span>`;
       }
       if (status === 'ACTA CAPTURADA PERO NO CONFIRMADA') {
         return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800"><i class="fa-solid fa-clock"></i> No Confirmada</span>`;
@@ -1550,7 +1599,7 @@
       const periodo = targetActas[0]?.periodo || '';
 
       const lines = targetActas.map(a =>
-        `• Secuencia: ${a.secuencia} | ${a.cveMateria} - ${a.materia} (${a.modalidad}) | Estatus: ${a.estatus} | Límite SAES: ${a.fechaLimite}`
+        `• Secuencia: ${a.secuencia} | ${a.cveMateria} - ${a.materia} (${a.modalidad}) | Estatus: ${getDisplayEstatusLabel(a)} | Límite SAES: ${a.fechaLimite}`
       ).join('\n');
 
       const body = `Estimado(a) Prof(a). ${docObj.nombre},\n\n` +
@@ -1612,7 +1661,7 @@
         Clave_Materia: r.cveMateria,
         Materia: r.materia,
         Fecha_Limite_SAES: r.fechaLimite,
-        Estatus_Acta: r.estatus,
+        Estatus_Acta: getDisplayEstatusLabel(r),
         Inscritos: r.inscritos,
         Calificados: r.calificados,
         Pendientes: r.pendientes
