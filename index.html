@@ -123,7 +123,7 @@
         </div>
         <h2 class="text-xl font-bold text-slate-800 mb-2">Aún no hay un corte de captura publicado</h2>
         <p class="text-sm text-slate-600 mb-5">
-          El administrador de Gestión Escolar debe cargar el archivo Excel de avance (hoja <strong>origen</strong> y hoja <strong>CORREOS</strong>) desde la pestaña <strong>Actualizar Origen</strong> para que los jefes de carrera visualicen los datos aquí.
+          El administrador de Gestión Escolar debe cargar el archivo Excel de avance desde la pestaña <strong>Actualizar Origen</strong> para que los jefes de carrera visualicen los datos aquí.
         </p>
         <button onclick="switchMainSection('admin')" class="btn-ipn px-5 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2 shadow-sm">
           <i class="fa-solid fa-cloud-arrow-up"></i> Ir a Actualizar Origen
@@ -366,7 +366,7 @@
           <div id="subViewJefaturas" class="hidden p-4 sm:p-6">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
               <p class="text-xs text-slate-600">
-                Resumen consolidado por <strong>Jefatura</strong> (incluyendo modalidad Escolarizada y No Escolarizada). Haz clic en <strong>Filtrar Jefatura</strong> para inspeccionar sus docentes.
+                Resumen consolidado por <strong>Jefatura</strong> (incluyendo modalidad Escolarizada y No Escolarizada). Haz clic en <strong>Ver docentes</strong> para inspeccionar sus profesores.
               </p>
             </div>
             <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl">
@@ -427,7 +427,7 @@
             </span>
             <h2 class="text-xl font-bold text-slate-800">Actualizar Archivo Origen y Directorio de Correos</h2>
             <p class="text-sm text-slate-600 mt-1">
-              Sube el libro Excel actualizado (con la hoja <strong>origen</strong> y la hoja <strong>CORREOS</strong>) para que todos los Jefes de Carrera visualicen el corte sin tener que cargar archivos manualmente.
+              Sube el libro Excel actualizado (con la hoja <strong>origen</strong> y la hoja <strong>CORREOS</strong> o columna <strong>CorreoDocente</strong>) para que todos los Jefes de Carrera visualicen el corte sin tener que cargar archivos manualmente.
             </p>
           </div>
         </div>
@@ -454,7 +454,7 @@
           </div>
           <h3 class="text-base font-bold text-slate-800">Haz clic aquí o arrastra tu archivo Excel (.xlsx)</h3>
           <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-            Compatible con <strong>origen.xlsx</strong> (hoja principal + hoja <strong>CORREOS</strong> con columnas RFC/Nombre y Correo).
+            Detecta automáticamente las hojas <strong>origen</strong> y <strong>CORREOS</strong> (columnas <strong>RFC</strong>, <strong>NOMBRE</strong> y <strong>CorreoDocente</strong>).
           </p>
         </div>
 
@@ -485,7 +485,7 @@
             <div><span class="text-slate-400 block">Archivo fuente</span><strong id="logFileName" class="text-slate-800">—</strong></div>
             <div><span class="text-slate-400 block">Fecha de actualización</span><strong id="logUpdatedAt" class="text-slate-800">—</strong></div>
             <div><span class="text-slate-400 block">Actas cargadas</span><strong id="logTotalRows" class="text-slate-800">0</strong></div>
-            <div><span class="text-slate-400 block">Correos en directorio</span><strong id="logTotalEmails" class="text-slate-800">0</strong></div>
+            <div><span class="text-slate-400 block">Docentes con correo</span><strong id="logTotalEmails" class="text-slate-800">0</strong></div>
           </div>
         </div>
       </div>
@@ -572,7 +572,7 @@
       <div class="p-6 space-y-3 text-sm text-slate-700">
         <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> en la barra superior de filtros para revisar el avance de actas, alumnos calificados y docentes con pendientes.</p>
         <p><strong>2. Vistas disponibles:</strong> Alterna entre <strong>Por Docente</strong> (para desplegar sus grupos y enviar recordatorio), <strong>Por Jefatura</strong> (comparativa general) y <strong>Detalle de Actas</strong>.</p>
-        <p><strong>3. Envío de recordatorios:</strong> Si el archivo incluye la hoja <strong>CORREOS</strong>, el sistema vincula automáticamente el correo de cada docente y te permite abrir Outlook/Gmail con el oficio prellenado o copiar correos en bloque.</p>
+        <p><strong>3. Envío de recordatorios:</strong> El sistema vincula automáticamente el correo de cada docente desde la hoja <strong>CORREOS</strong> (columna <strong>CorreoDocente</strong>) para abrir Outlook/Gmail con el oficio prellenado o copiar correos en bloque.</p>
         <p><strong>4. Actualización del corte:</strong> Gestión Escolar actualiza los registros desde la pestaña <strong>Actualizar Origen</strong> sin necesidad de modificar el código de la página.</p>
       </div>
       <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 text-right">
@@ -658,7 +658,7 @@
 
     window.saveDatasetToCloud = async function(rows, emailMap, meta, pinInput) {
       if (!firebaseReady || !db) {
-        localStorage.setItem('esca_saes_dataset_v1', JSON.stringify({ rows, emailMap, meta }));
+        localStorage.setItem('esca_saes_dataset_v2', JSON.stringify({ rows, emailMap, meta }));
         window.applyLoadedDataset(rows, emailMap, meta);
         updateSyncBadge('Guardado localmente', 'emerald');
         return true;
@@ -688,7 +688,7 @@
 
     function loadLocalFallback() {
       try {
-        const cached = localStorage.getItem('esca_saes_dataset_v1');
+        const cached = localStorage.getItem('esca_saes_dataset_v2') || localStorage.getItem('esca_saes_dataset_v1');
         if (cached) {
           const parsed = JSON.parse(cached);
           window.applyLoadedDataset(parsed.rows || [], parsed.emailMap || {}, parsed.meta || {});
@@ -719,7 +719,7 @@
   <script>
     let allRecords = [];
     let filteredRecords = [];
-    let directoryEmails = { byRfc: {}, byName: {} };
+    let directoryEmails = { byRfc: {}, byName: {}, byTokenKey: {} };
     let pendingUploadData = null;
     let chartEstatusInstance = null;
     let chartJefaturasInstance = null;
@@ -751,14 +751,23 @@
       return s;
     }
 
+    // Normaliza nombres eliminando acentos, Ñ->N, signos y espacios dobles
     function normalizeNameKey(name) {
       return String(name || '')
+        .replace(/Ñ/gi, 'N')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toUpperCase()
-        .replace(/[^A-Z0-9\s]/g, '')
+        .replace(/[^A-Z0-9\s]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+    }
+
+    // Firma ordenada de palabras (para empatar aunque cambie orden nombre/apellidos)
+    function normalizeTokenSignature(name) {
+      const clean = normalizeNameKey(name);
+      if (!clean) return '';
+      return clean.split(' ').filter(w => w.length > 1).sort().join(' ');
     }
 
     function formatExcelDate(val) {
@@ -777,56 +786,102 @@
       return String(val).trim();
     }
 
-    function parseCorreosSheet(workbook) {
-      const targetSheetName = workbook.SheetNames.find(
-        n => n.trim().toUpperCase() === 'CORREOS'
-      );
-      const map = { byRfc: {}, byName: {}, count: 0 };
-      if (!targetSheetName) return map;
+    // Extrae correos desde la hoja CORREOS y también recorre las demás hojas por si CorreoDocente está ahí
+    function extractEmailsFromWorkbook(workbook) {
+      const map = { byRfc: {}, byName: {}, byTokenKey: {}, count: 0 };
 
-      const sheet = workbook.Sheets[targetSheetName];
-      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-      rows.forEach(row => {
-        const keys = Object.keys(row);
-        let rfcVal = '';
-        let nameVal = '';
-        let emailVal = '';
+      // Priorizar hoja CORREOS primero, luego el resto de hojas
+      const orderedSheets = [...workbook.SheetNames].sort((a, b) => {
+        const aIsCorreos = a.trim().toUpperCase().includes('CORREO') ? 0 : 1;
+        const bIsCorreos = b.trim().toUpperCase().includes('CORREO') ? 0 : 1;
+        return aIsCorreos - bIsCorreos;
+      });
 
-        keys.forEach(k => {
-          const kl = k.trim().toUpperCase();
-          const val = String(row[k] || '').trim();
-          if (!val) return;
-          if (!rfcVal && (kl === 'RFC' || kl.includes('RFC') || kl === 'CURP')) {
-            rfcVal = val.toUpperCase();
-          } else if (!emailVal && (kl.includes('CORREO') || kl.includes('MAIL') || val.includes('@'))) {
-            if (val.includes('@')) emailVal = val.toLowerCase();
-          } else if (!nameVal && (kl.includes('NOMBRE') || kl.includes('DOCENTE') || kl.includes('PROFESOR'))) {
-            nameVal = val;
-          }
-        });
+      orderedSheets.forEach(sheetName => {
+        const sheet = workbook.Sheets[sheetName];
+        if (!sheet) return;
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+        if (!rows.length) return;
 
-        if (!emailVal) {
+        rows.forEach(row => {
+          const keys = Object.keys(row);
+          let rfcVal = '';
+          let nameVal = '';
+          let emailVal = '';
+
+          // 1. Buscar explícitamente CorreoDocente o columnas con correo
           for (const k of keys) {
+            const kl = k.trim().toUpperCase().replace(/\s+/g, '');
             const val = String(row[k] || '').trim();
-            if (val.includes('@')) {
-              emailVal = val.toLowerCase();
-              break;
+            if (!val) continue;
+
+            if (kl === 'CORREODOCENTE' || kl.includes('CORREO') || kl.includes('EMAIL') || kl.includes('MAIL')) {
+              const match = val.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+              if (match) {
+                emailVal = match[0].toLowerCase();
+                break;
+              }
             }
           }
-        }
 
-        if (emailVal) {
-          if (rfcVal) map.byRfc[rfcVal] = emailVal;
-          if (nameVal) map.byName[normalizeNameKey(nameVal)] = emailVal;
-          map.count++;
-        }
+          // Respaldo: buscar cualquier celda con formato email en la fila
+          if (!emailVal) {
+            for (const k of keys) {
+              const val = String(row[k] || '').trim();
+              const match = val.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+              if (match) {
+                emailVal = match[0].toLowerCase();
+                break;
+              }
+            }
+          }
+
+          if (!emailVal) return;
+
+          // 2. Buscar RFC y Nombre en la misma fila
+          for (const k of keys) {
+            const kl = k.trim().toUpperCase().replace(/\s+/g, '');
+            const val = String(row[k] || '').trim();
+            if (!val) continue;
+
+            if (!rfcVal && (kl === 'RFC' || kl.includes('RFC') || kl === 'CURP')) {
+              rfcVal = val.toUpperCase();
+            } else if (
+              !nameVal &&
+              (kl === 'NOMBRE' || kl === 'NOMBREDOCENTE' || kl === 'DOCENTE' || kl === 'PROFESOR' || kl.includes('NOMBRE')) &&
+              !kl.includes('MATERIA') &&
+              !kl.includes('CARRERA') &&
+              !val.includes('@')
+            ) {
+              nameVal = val;
+            }
+          }
+
+          if (rfcVal && !map.byRfc[rfcVal]) {
+            map.byRfc[rfcVal] = emailVal;
+          }
+          if (nameVal) {
+            const nKey = normalizeNameKey(nameVal);
+            const tKey = normalizeTokenSignature(nameVal);
+            if (nKey && !map.byName[nKey]) map.byName[nKey] = emailVal;
+            if (tKey && !map.byTokenKey[tKey]) map.byTokenKey[tKey] = emailVal;
+          }
+        });
       });
+
+      const uniqueEmails = new Set([
+        ...Object.values(map.byRfc),
+        ...Object.values(map.byName)
+      ]);
+      map.count = uniqueEmails.size;
       return map;
     }
 
     function parseOrigenSheet(workbook) {
       const sheetName = workbook.SheetNames.find(
         n => n.trim().toUpperCase() === 'ORIGEN'
+      ) || workbook.SheetNames.find(
+        n => !n.trim().toUpperCase().includes('CORREO')
       ) || workbook.SheetNames[0];
 
       const sheet = workbook.Sheets[sheetName];
@@ -910,23 +965,32 @@
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
           const rows = parseOrigenSheet(workbook);
-          const emailMap = parseCorreosSheet(workbook);
+          const emailMap = extractEmailsFromWorkbook(workbook);
 
           if (!rows.length) {
             alert('No se encontraron registros válidos en la hoja principal del archivo.');
             return;
           }
 
+          // Contar cuántos docentes únicos de las actas lograron empatar correo
+          const uniqueDocs = new Map();
+          rows.forEach(r => uniqueDocs.set(r.rfc, r.nombre));
+          let matchedDocCount = 0;
+          uniqueDocs.forEach((nom, rfc) => {
+            if (resolveDocenteEmailFromMap(emailMap, rfc, nom)) matchedDocCount++;
+          });
+
           pendingUploadData = {
             fileName: file.name,
             rows,
-            emailMap
+            emailMap,
+            matchedDocCount
           };
 
           const previewBox = document.getElementById('uploadPreviewBox');
           const summary = document.getElementById('previewFileSummary');
           previewBox.classList.remove('hidden');
-          summary.textContent = `Archivo: ${file.name} • ${rows.length} actas detectadas • ${emailMap.count} correos vinculados desde hoja CORREOS.`;
+          summary.textContent = `Archivo: ${file.name} • ${rows.length} actas detectadas • ${matchedDocCount} de ${uniqueDocs.size} docentes vinculados con correo.`;
         } catch (err) {
           console.error(err);
           alert('Error al leer el archivo Excel. Verifica que sea un formato .xlsx o .xls válido.');
@@ -951,7 +1015,7 @@
           fileName: pendingUploadData.fileName,
           updatedAt: nowStr,
           totalRows: pendingUploadData.rows.length,
-          totalEmails: pendingUploadData.emailMap.count,
+          totalEmails: pendingUploadData.matchedDocCount || pendingUploadData.emailMap.count,
           periodo: pendingUploadData.rows[0]?.periodo || '—',
           evaluacion: pendingUploadData.rows[0]?.evaluacion || '—'
         };
@@ -977,20 +1041,27 @@
 
     window.applyLoadedDataset = function(rows, emailMap, meta) {
       allRecords = rows || [];
-      directoryEmails = emailMap || { byRfc: {}, byName: {}, count: 0 };
+      directoryEmails = emailMap || { byRfc: {}, byName: {}, byTokenKey: {}, count: 0 };
 
       document.getElementById('emptyDataNotice').classList.add('hidden');
       document.getElementById('dashboardActiveContainer').classList.remove('hidden');
 
+      const uniqueDocs = new Map();
+      allRecords.forEach(r => uniqueDocs.set(r.rfc, r.nombre));
+      let linkedCount = 0;
+      uniqueDocs.forEach((nom, rfc) => {
+        if (resolveDocenteEmail(rfc, nom)) linkedCount++;
+      });
+
       document.getElementById('badgePeriodo').textContent = meta.periodo || (allRecords[0]?.periodo || '—');
       document.getElementById('badgeEvaluacion').textContent = meta.evaluacion || (allRecords[0]?.evaluacion || '—');
       document.getElementById('badgeRegistros').textContent = allRecords.length.toLocaleString('es-MX');
-      document.getElementById('badgeCorreos').textContent = (directoryEmails.count || Object.keys(directoryEmails.byRfc || {}).length).toLocaleString('es-MX');
+      document.getElementById('badgeCorreos').textContent = linkedCount.toLocaleString('es-MX');
 
       document.getElementById('logFileName').textContent = meta.fileName || 'origen.xlsx';
       document.getElementById('logUpdatedAt').textContent = meta.updatedAt || '—';
       document.getElementById('logTotalRows').textContent = allRecords.length.toLocaleString('es-MX');
-      document.getElementById('logTotalEmails').textContent = (directoryEmails.count || 0).toLocaleString('es-MX');
+      document.getElementById('logTotalEmails').textContent = `${linkedCount} / ${uniqueDocs.size}`;
 
       populateDynamicFilters();
       applyFilters();
@@ -1178,15 +1249,25 @@
       });
     }
 
-    function resolveDocenteEmail(rfc, nombre) {
-      if (directoryEmails.byRfc && directoryEmails.byRfc[rfc]) {
-        return directoryEmails.byRfc[rfc];
+    function resolveDocenteEmailFromMap(mapObj, rfc, nombre) {
+      if (!mapObj) return '';
+      const cleanRfc = String(rfc || '').trim().toUpperCase();
+      if (mapObj.byRfc && mapObj.byRfc[cleanRfc]) {
+        return mapObj.byRfc[cleanRfc];
       }
       const nKey = normalizeNameKey(nombre);
-      if (directoryEmails.byName && directoryEmails.byName[nKey]) {
-        return directoryEmails.byName[nKey];
+      if (mapObj.byName && mapObj.byName[nKey]) {
+        return mapObj.byName[nKey];
+      }
+      const tKey = normalizeTokenSignature(nombre);
+      if (mapObj.byTokenKey && mapObj.byTokenKey[tKey]) {
+        return mapObj.byTokenKey[tKey];
       }
       return '';
+    }
+
+    function resolveDocenteEmail(rfc, nombre) {
+      return resolveDocenteEmailFromMap(directoryEmails, rfc, nombre);
     }
 
     function getGroupedDocentes() {
