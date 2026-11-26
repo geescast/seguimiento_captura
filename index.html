@@ -149,12 +149,24 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <!-- Filtro Jefatura -->
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Jefatura</label>
               <select id="filterJefatura" onchange="applyFilters()" class="w-full rounded-xl border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-ipn focus:outline-none">
                 <option value="ALL">Todas las Jefaturas</option>
+              </select>
+            </div>
+
+            <!-- Filtro Evaluación -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Evaluación</label>
+              <select id="filterEvaluacion" onchange="applyFilters()" class="w-full rounded-xl border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-ipn focus:outline-none">
+                <option value="ALL">Todas las Evaluaciones</option>
+                <option value="1ER DEPARTAMENTAL">1er Departamental</option>
+                <option value="2DO DEPARTAMENTAL">2do Departamental</option>
+                <option value="3ER DEPARTAMENTAL">3er Departamental</option>
+                <option value="EXTRAORDINARIO">Extraordinario</option>
               </select>
             </div>
 
@@ -397,6 +409,7 @@
                 <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-bold">
                   <tr>
                     <th class="px-3 py-3 text-left">Jefatura</th>
+                    <th class="px-3 py-3 text-left">Evaluación</th>
                     <th class="px-3 py-3 text-left">Modalidad</th>
                     <th class="px-3 py-3 text-center">Sem.</th>
                     <th class="px-3 py-3 text-left">Secuencia</th>
@@ -571,7 +584,7 @@
         </button>
       </div>
       <div class="p-6 space-y-3 text-sm text-slate-700">
-        <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> en la barra superior de filtros para revisar el avance de actas, alumnos calificados y docentes con pendientes.</p>
+        <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> y la <strong>Evaluación</strong> (1er, 2do, 3er Departamental o Extraordinario) en la barra de filtros para revisar el avance.</p>
         <p><strong>2. Vistas disponibles:</strong> Alterna entre <strong>Por Docente</strong> (para desplegar sus grupos y enviar recordatorio), <strong>Por Jefatura</strong> (comparativa general) y <strong>Detalle de Actas</strong>.</p>
         <p><strong>3. Captura al 100 % sin cerrar acta:</strong> Cuando todos los alumnos inscritos ya están calificados pero el acta aún no figura como confirmada, se muestra en <strong>Capturada al 100 % sin cerrar acta</strong> en verde claro y no se contabiliza como pendiente para el docente, ya que Gestión Escolar puede cerrarla.</p>
         <p><strong>4. Actualización del corte:</strong> Gestión Escolar actualiza los registros desde la pestaña <strong>Actualizar Origen</strong> sin necesidad de modificar el código de la página.</p>
@@ -768,6 +781,26 @@
       return s || 'SIN JEFATURA';
     }
 
+    function normalizeEvaluacionLabel(raw) {
+      const s = String(raw || '').trim().toUpperCase().replace(/\s+/g, ' ');
+      if (!s) return 'SIN EVALUACIÓN';
+      if (s.includes('1ER') || s.includes('PRIMER')) return '1ER DEPARTAMENTAL';
+      if (s.includes('2DO') || s.includes('SEGUNDO')) return '2DO DEPARTAMENTAL';
+      if (s.includes('3ER') || s.includes('TERCER')) return '3ER DEPARTAMENTAL';
+      if (s.includes('EXTRA')) return 'EXTRAORDINARIO';
+      return s;
+    }
+
+    function formatEvaluacionDisplay(normEval, rawEval = '') {
+      const map = {
+        '1ER DEPARTAMENTAL': '1er Departamental',
+        '2DO DEPARTAMENTAL': '2do Departamental',
+        '3ER DEPARTAMENTAL': '3er Departamental',
+        'EXTRAORDINARIO': 'Extraordinario'
+      };
+      return map[normEval] || (rawEval ? String(rawEval).trim() : '—');
+    }
+
     function normalizeStatus(raw) {
       const s = String(raw || '').trim().toUpperCase().replace(/\s+/g, ' ');
       if (!s) return 'SIN REGISTRO';
@@ -938,6 +971,9 @@
         const secuencia = String(r['Secuencia'] || r['SECUENCIA'] || '').trim().toUpperCase();
         const cveMateria = String(r['Cve_Materia'] || r['CVE_MATERIA'] || '').trim().toUpperCase();
         const materia = String(r['Materia'] || r['MATERIA'] || '').trim();
+        const rawEvaluacion = String(r['Evaluacion'] || r['EVALUACION'] || '').trim();
+        const evaluacionNorm = normalizeEvaluacionLabel(rawEvaluacion);
+        const evaluacion = formatEvaluacionDisplay(evaluacionNorm, rawEvaluacion);
         const estatus = normalizeStatus(r['Estatus_acta'] || r['ESTATUS_ACTA']);
         const rawJefatura = r['Jefatura'] || r['JEFATURA'] || r['Carrera'] || r['CARRERA'] || '';
         const jefatura = cleanJefaturaLabel(rawJefatura);
@@ -955,7 +991,8 @@
 
         cleanRows.push({
           periodo: String(r['Periodo_escolar'] || '').trim(),
-          evaluacion: String(r['Evaluacion'] || '').trim(),
+          evaluacion,
+          evaluacionNorm,
           rfc,
           nombre,
           fechaApp: formatExcelDate(r['Fecha aplicación']),
@@ -1051,13 +1088,14 @@
           dateStyle: 'medium',
           timeStyle: 'short'
         });
+        const evalsPresentes = [...new Set(pendingUploadData.rows.map(r => r.evaluacion).filter(Boolean))];
         const meta = {
           fileName: pendingUploadData.fileName,
           updatedAt: nowStr,
           totalRows: pendingUploadData.rows.length,
           totalEmails: pendingUploadData.matchedDocCount || pendingUploadData.emailMap.count,
           periodo: pendingUploadData.rows[0]?.periodo || '—',
-          evaluacion: pendingUploadData.rows[0]?.evaluacion || '—'
+          evaluacion: evalsPresentes.length > 1 ? `${evalsPresentes.length} evaluaciones` : (evalsPresentes[0] || '—')
         };
 
         await window.saveDatasetToCloud(
@@ -1094,7 +1132,14 @@
     };
 
     window.applyLoadedDataset = function(rows, emailMap, meta) {
-      allRecords = rows || [];
+      allRecords = (rows || []).map(r => {
+        const normEval = r.evaluacionNorm || normalizeEvaluacionLabel(r.evaluacion);
+        return {
+          ...r,
+          evaluacionNorm: normEval,
+          evaluacion: r.evaluacion || formatEvaluacionDisplay(normEval)
+        };
+      });
       directoryEmails = emailMap || { byRfc: {}, byName: {}, byTokenKey: {}, count: 0 };
 
       document.getElementById('emptyDataNotice').classList.add('hidden');
@@ -1107,8 +1152,9 @@
         if (resolveDocenteEmail(rfc, nom)) linkedCount++;
       });
 
+      const evalsPresentes = [...new Set(allRecords.map(r => r.evaluacion).filter(Boolean))];
       document.getElementById('badgePeriodo').textContent = meta.periodo || (allRecords[0]?.periodo || '—');
-      document.getElementById('badgeEvaluacion').textContent = meta.evaluacion || (allRecords[0]?.evaluacion || '—');
+      document.getElementById('badgeEvaluacion').textContent = meta.evaluacion || (evalsPresentes.length > 1 ? `${evalsPresentes.length} evaluaciones` : (evalsPresentes[0] || '—'));
       document.getElementById('badgeRegistros').textContent = allRecords.length.toLocaleString('es-MX');
       document.getElementById('badgeCorreos').textContent = linkedCount.toLocaleString('es-MX');
 
@@ -1128,15 +1174,27 @@
 
     function populateDynamicFilters() {
       const jefSelect = document.getElementById('filterJefatura');
+      const evalSelect = document.getElementById('filterEvaluacion');
       const semSelect = document.getElementById('filterSemestre');
 
       const currentJef = jefSelect.value;
+      const currentEval = evalSelect.value;
       const currentSem = semSelect.value;
 
       const jefaturas = [...new Set(allRecords.map(r => r.jefatura))].sort();
       jefSelect.innerHTML = '<option value="ALL">Todas las Jefaturas</option>' +
         jefaturas.map(j => `<option value="${escapeHtml(j)}">${escapeHtml(j)}</option>`).join('');
       if (jefaturas.includes(currentJef)) jefSelect.value = currentJef;
+
+      const preferredOrder = ['1ER DEPARTAMENTAL', '2DO DEPARTAMENTAL', '3ER DEPARTAMENTAL', 'EXTRAORDINARIO'];
+      const presentEvals = [...new Set(allRecords.map(r => r.evaluacionNorm).filter(Boolean))];
+      const orderedEvals = [
+        ...preferredOrder.filter(e => presentEvals.includes(e)),
+        ...presentEvals.filter(e => !preferredOrder.includes(e)).sort()
+      ];
+      evalSelect.innerHTML = '<option value="ALL">Todas las Evaluaciones</option>' +
+        orderedEvals.map(ev => `<option value="${escapeHtml(ev)}">${escapeHtml(formatEvaluacionDisplay(ev))}</option>`).join('');
+      if (orderedEvals.includes(currentEval)) evalSelect.value = currentEval;
 
       const semestres = [...new Set(allRecords.map(r => r.semestre))].sort((a, b) => parseInt(a) - parseInt(b));
       semSelect.innerHTML = '<option value="ALL">Todos los Semestres</option>' +
@@ -1146,6 +1204,7 @@
 
     function applyFilters() {
       const jef = document.getElementById('filterJefatura').value;
+      const ev = document.getElementById('filterEvaluacion').value;
       const mod = document.getElementById('filterModalidad').value;
       const sem = document.getElementById('filterSemestre').value;
       const est = document.getElementById('filterEstatus').value;
@@ -1153,6 +1212,7 @@
 
       filteredRecords = allRecords.filter(r => {
         if (jef !== 'ALL' && r.jefatura !== jef) return false;
+        if (ev !== 'ALL' && r.evaluacionNorm !== ev) return false;
         if (mod !== 'ALL' && r.modalidad !== mod) return false;
         if (sem !== 'ALL' && r.semestre !== sem) return false;
         if (est !== 'ALL') {
@@ -1165,11 +1225,16 @@
           }
         }
         if (q) {
-          const hay = `${r.nombre} ${r.rfc} ${r.secuencia} ${r.cveMateria} ${r.materia} ${r.jefatura}`.toUpperCase();
+          const hay = `${r.nombre} ${r.rfc} ${r.secuencia} ${r.cveMateria} ${r.materia} ${r.jefatura} ${r.evaluacion}`.toUpperCase();
           if (!hay.includes(q)) return false;
         }
         return true;
       });
+
+      const activeEvalText = ev === 'ALL'
+        ? (document.getElementById('badgeEvaluacion').textContent || 'Todas')
+        : formatEvaluacionDisplay(ev);
+      document.getElementById('badgeEvaluacion').textContent = activeEvalText;
 
       updateKPIs();
       updateCharts();
@@ -1180,6 +1245,7 @@
 
     function resetFilters() {
       document.getElementById('filterJefatura').value = 'ALL';
+      document.getElementById('filterEvaluacion').value = 'ALL';
       document.getElementById('filterModalidad').value = 'ALL';
       document.getElementById('filterSemestre').value = 'ALL';
       document.getElementById('filterEstatus').value = 'ALL';
@@ -1392,6 +1458,7 @@
           <tr class="border-t border-slate-100 text-xs">
             <td class="py-2 px-3 font-semibold text-slate-700">${escapeHtml(a.secuencia)}</td>
             <td class="py-2 px-3">${escapeHtml(a.cveMateria)} - ${escapeHtml(a.materia)}</td>
+            <td class="py-2 px-3">${escapeHtml(a.evaluacion)}</td>
             <td class="py-2 px-3">${escapeHtml(a.jefatura)}</td>
             <td class="py-2 px-3">${escapeHtml(a.modalidad)}</td>
             <td class="py-2 px-3">${escapeHtml(a.fechaLimite)}</td>
@@ -1442,6 +1509,7 @@
                     <tr>
                       <th class="py-2 px-3 text-left">Secuencia</th>
                       <th class="py-2 px-3 text-left">Unidad de Aprendizaje</th>
+                      <th class="py-2 px-3 text-left">Evaluación</th>
                       <th class="py-2 px-3 text-left">Jefatura</th>
                       <th class="py-2 px-3 text-left">Modalidad</th>
                       <th class="py-2 px-3 text-left">Límite SAES</th>
@@ -1553,7 +1621,7 @@
       const slice = filteredRecords.slice(0, limit);
 
       if (!slice.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-500">No hay actas para mostrar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-8 text-center text-slate-500">No hay actas para mostrar.</td></tr>`;
         document.getElementById('actasPaginationInfo').textContent = '';
         return;
       }
@@ -1561,6 +1629,7 @@
       tbody.innerHTML = slice.map(r => `
         <tr class="hover:bg-slate-50">
           <td class="px-3 py-2.5 font-medium text-slate-700">${escapeHtml(r.jefatura)}</td>
+          <td class="px-3 py-2.5 text-xs font-semibold text-slate-700">${escapeHtml(r.evaluacion)}</td>
           <td class="px-3 py-2.5 text-xs">${escapeHtml(r.modalidad)}</td>
           <td class="px-3 py-2.5 text-center">${escapeHtml(r.semestre)}</td>
           <td class="px-3 py-2.5 font-bold text-slate-800">${escapeHtml(r.secuencia)}</td>
@@ -1608,7 +1677,7 @@
       const periodo = targetActas[0]?.periodo || '';
 
       const lines = targetActas.map(a =>
-        `• Secuencia: ${a.secuencia} | ${a.cveMateria} - ${a.materia} (${a.modalidad}) | Estatus: ${getDisplayEstatusLabel(a)} | Límite SAES: ${a.fechaLimite}`
+        `• Secuencia: ${a.secuencia} | ${a.cveMateria} - ${a.materia} (${a.evaluacion} / ${a.modalidad}) | Estatus: ${getDisplayEstatusLabel(a)} | Límite SAES: ${a.fechaLimite}`
       ).join('\n');
 
       const body = `Estimado(a) Prof(a). ${docObj.nombre},\n\n` +
