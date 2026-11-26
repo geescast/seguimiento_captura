@@ -24,10 +24,10 @@
                     },
                     colors: {
                         ipn: {
-                            guinda: '#6A1B31',
-                            guindaDark: '#561224',
-                            guindaLight: '#872440',
-                            guindaSoft: '#FDF2F5',
+                            guinda: '#6C1D45',
+                            guindaDark: '#521433',
+                            guindaLight: '#872456',
+                            guindaSoft: '#FDF2F7',
                             oro: '#A67C37',
                             oroLight: '#C9A15A',
                             oroSoft: '#FAF5EC',
@@ -45,7 +45,7 @@
             color: #1E293B;
         }
         .ipn-gradient {
-            background: linear-gradient(135deg, #6A1B31 0%, #561224 100%);
+            background: linear-gradient(135deg, #6C1D45 0%, #521433 100%);
         }
         .ipn-gold-border {
             border-bottom: 3px solid #C9A15A;
@@ -99,8 +99,9 @@
                             <h1 class="text-sm sm:text-base lg:text-lg font-extrabold tracking-tight">
                                 Monitor de Avance de Captura SAES
                             </h1>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-ipn-oro/30 border border-ipn-oroLight/50 text-amber-100">
-                                Carga Manual
+                            <span id="cloudStatusBadge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-white/15 border border-white/25 text-white flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+                                <span>Conectando base compartida...</span>
                             </span>
                         </div>
                         <p class="text-[11px] sm:text-xs text-white/80">
@@ -109,32 +110,27 @@
                     </div>
                 </div>
 
-                <!-- Botones de Acción Principales -->
+                <!-- Navegación Principal: Tablero para Jefes vs. Pestaña Actualizar Origen -->
                 <div class="flex flex-wrap items-center gap-2 no-print">
-                    <button type="button" onclick="document.getElementById('fileInput').click()" class="inline-flex items-center gap-2 bg-ipn-oro hover:bg-[#8E692D] text-white font-bold text-xs sm:text-sm px-3.5 py-2 rounded-lg shadow transition cursor-pointer">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Cargar archivo Excel</span>
-                    </button>
-                    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
-
-                    <button type="button" onclick="clearLoadedDataset()" id="btnClearFile" class="hidden inline-flex items-center gap-1.5 bg-white/10 hover:bg-rose-600/80 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Limpiar archivo cargado y volver a la pantalla de carga manual">
-                        <i class="fa-solid fa-trash-can"></i>
-                        <span class="hidden sm:inline">Limpiar</span>
-                    </button>
+                    <div class="inline-flex rounded-xl bg-black/20 p-1 border border-white/15">
+                        <button type="button" id="mainNavDashboardBtn" onclick="switchMainSection('dashboard')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-white text-ipn-guinda shadow transition cursor-pointer">
+                            <i class="fa-solid fa-chart-pie"></i>
+                            <span>Tablero y Seguimiento</span>
+                        </button>
+                        <button type="button" id="mainNavAdminBtn" onclick="switchMainSection('admin')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-white/90 hover:text-white hover:bg-white/10 transition cursor-pointer">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Actualizar Origen</span>
+                        </button>
+                    </div>
 
                     <button type="button" onclick="exportFilteredToExcel()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Exportar vista filtrada actual a Excel (.xlsx)">
                         <i class="fa-solid fa-download"></i>
                         <span class="hidden sm:inline">Exportar XLSX</span>
                     </button>
 
-                    <button type="button" onclick="downloadTemplateExcel()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Descargar plantilla vacía con las 21 columnas">
-                        <i class="fa-solid fa-file-arrow-down"></i>
-                        <span class="hidden md:inline">Plantilla</span>
-                    </button>
-
                     <button type="button" onclick="openGuideModal()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Guía rápida para jefes de carrera">
                         <i class="fa-solid fa-circle-question text-ipn-oroLight"></i>
-                        <span>Guía rápida</span>
+                        <span class="hidden md:inline">Guía</span>
                     </button>
 
                     <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition cursor-pointer" title="Imprimir o Guardar como PDF">
@@ -145,12 +141,12 @@
         </div>
     </header>
 
-    <!-- BARRA DE JEFATURA, MODALIDAD Y ESTADO DE ARCHIVO -->
-    <section class="bg-white border-b border-slate-200 shadow-sm">
+    <!-- BARRA DE JEFATURA, MODALIDAD Y ESTADO DEL CORTE VIGENTE -->
+    <section id="topFilterBar" class="bg-white border-b border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
 
-                <!-- Selector de Jefatura -->
+                <!-- Selector Limpio de Jefatura -->
                 <div class="lg:col-span-5">
                     <label for="jefaturaSelector" class="block text-xs font-bold uppercase tracking-wider text-ipn-guinda mb-1.5 flex items-center gap-1.5">
                         <i class="fa-solid fa-user-tie"></i>
@@ -158,7 +154,7 @@
                     </label>
                     <div class="relative">
                         <select id="jefaturaSelector" onchange="applyFilters()" class="w-full appearance-none bg-slate-50 border-2 border-ipn-guinda/30 hover:border-ipn-guinda focus:border-ipn-guinda focus:ring-2 focus:ring-ipn-guinda/20 rounded-xl py-2.5 pl-4 pr-10 text-xs sm:text-sm font-bold text-slate-800 transition cursor-pointer">
-                            <option value="ALL">🌐 TODAS LAS JEFATURAS — Vista Global</option>
+                            <option value="ALL">TODAS LAS JEFATURAS — Vista Global</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-ipn-guinda">
                             <i class="fa-solid fa-chevron-down text-sm"></i>
@@ -166,17 +162,17 @@
                     </div>
                 </div>
 
-                <!-- Selector de Modalidad (Regla 3er Carácter 'X' en Secuencia) -->
+                <!-- Selector Limpio de Modalidad -->
                 <div class="lg:col-span-3">
                     <label for="modalitySelector" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
                         <i class="fa-solid fa-laptop-file text-ipn-oro"></i>
-                        <span>Modalidad (3er car. Sec.):</span>
+                        <span>Modalidad:</span>
                     </label>
                     <div class="relative">
                         <select id="modalitySelector" onchange="applyFilters()" class="w-full appearance-none bg-slate-50 border-2 border-slate-200 hover:border-ipn-oro focus:border-ipn-guinda rounded-xl py-2.5 pl-3.5 pr-9 text-xs sm:text-sm font-bold text-slate-800 transition cursor-pointer">
                             <option value="ALL">Todas las Modalidades</option>
-                            <option value="Escolarizada">🏫 Escolarizada (Sin 'X')</option>
-                            <option value="No Escolarizada">🌐 No Escolarizada (3er car. 'X')</option>
+                            <option value="Escolarizada">Escolarizada</option>
+                            <option value="No Escolarizada">No Escolarizada</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                             <i class="fa-solid fa-chevron-down text-xs"></i>
@@ -184,24 +180,24 @@
                     </div>
                 </div>
 
-                <!-- Indicador de Archivo Cargado / Acceso Rápido a Carga -->
-                <div class="lg:col-span-4 no-print">
-                    <div id="compactDropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-slate-300 hover:border-ipn-guinda rounded-xl p-2.5 bg-slate-50/70 hover:bg-ipn-guindaSoft/50 transition-all cursor-pointer flex items-center justify-between gap-2.5">
+                <!-- Tarjeta Informativa del Corte Publicado -->
+                <div class="lg:col-span-4">
+                    <div class="border border-slate-200 rounded-xl p-2.5 bg-slate-50/80 flex items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2.5 min-w-0">
                             <div class="w-9 h-9 rounded-lg bg-ipn-guinda/10 text-ipn-guinda flex items-center justify-center flex-shrink-0">
-                                <i class="fa-solid fa-cloud-arrow-up text-base"></i>
+                                <i class="fa-solid fa-database text-base"></i>
                             </div>
                             <div class="min-w-0">
                                 <p id="loadedFileName" class="text-xs font-bold text-slate-800 truncate">
-                                    Sin archivo cargado (Modo manual)
+                                    Sin corte publicado aún
                                 </p>
                                 <p id="loadedFileMeta" class="text-[11px] text-slate-500 truncate">
-                                    Selecciona o arrastra tu archivo .xlsx, .xls o .csv
+                                    Esperando archivo origen actualizado
                                 </p>
                             </div>
                         </div>
                         <span id="periodBadge" class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-slate-200 text-slate-700">
-                            ESPERA
+                            VIGENTE
                         </span>
                     </div>
                 </div>
@@ -213,361 +209,452 @@
     <!-- CONTENEDOR PRINCIPAL -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- PANTALLA INICIAL LIMPIA DE CARGA MANUAL (SE MUESTRA CUANDO NO HAY ARCHIVO CARGADO) -->
-        <section id="emptyUploadScreen" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-10">
-            <div class="max-w-3xl mx-auto text-center space-y-5">
-                <div class="w-16 h-16 rounded-2xl bg-ipn-guindaSoft text-ipn-guinda border border-ipn-guinda/20 flex items-center justify-center mx-auto text-2xl shadow-sm">
-                    <i class="fa-solid fa-file-excel"></i>
+        <!-- ======================================================================== -->
+        <!-- SECCIÓN A: PESTAÑA ADMINISTRACIÓN / ACTUALIZAR ORIGEN                    -->
+        <!-- ======================================================================== -->
+        <section id="adminSection" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="ipn-gradient px-6 py-4 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-2 ipn-gold-border">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-ipn-oroLight text-lg">
+                            <i class="fa-solid fa-server"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold">Administración y Actualización del Archivo Origen</h2>
+                            <p class="text-xs text-white/80">Sube el reporte actualizado para sincronizar automáticamente la vista de todas las Jefaturas de Carrera.</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="switchMainSection('dashboard')" class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition cursor-pointer self-start sm:self-auto">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Volver al Tablero</span>
+                    </button>
                 </div>
 
-                <div class="space-y-2">
-                    <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">
-                        Carga tu archivo de avance de captura SAES
-                    </h2>
-                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                        La plataforma inicia en <strong>modo de carga manual</strong>: selecciona o arrastra tu archivo Excel o CSV desde tu equipo (por ejemplo, desde <span class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-800">C:\Users\Soporte\Documents\avance captura</span>). Todo el procesamiento se realiza localmente en tu navegador.
-                    </p>
-                </div>
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Columna Izquierda: Carga y Publicación -->
+                    <div class="lg:col-span-7 space-y-4">
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <label for="adminPinInput" class="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                                    <i class="fa-solid fa-key text-ipn-guinda"></i>
+                                    <span>PIN de Administrador (opcional):</span>
+                                </label>
+                                <span id="pinHintBadge" class="text-[11px] font-medium text-slate-500">
+                                    Si no hay PIN configurado, puedes publicar directo o definir uno nuevo abajo.
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <input type="password" id="adminPinInput" placeholder="Ingresa PIN actual (si aplica)" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda">
+                                <input type="password" id="newAdminPinInput" placeholder="Definir / cambiar PIN (opcional)" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda">
+                            </div>
+                        </div>
 
-                <!-- Zona Grande de Arrastrar y Soltar -->
-                <div id="heroDropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-ipn-guinda/40 hover:border-ipn-guinda bg-slate-50/70 hover:bg-ipn-guindaSoft/40 rounded-2xl p-8 transition-all cursor-pointer group">
-                    <i class="fa-solid fa-cloud-arrow-up text-4xl text-ipn-guinda group-hover:scale-105 transition-transform mb-3"></i>
-                    <p class="text-sm sm:text-base font-bold text-slate-800">
-                        Arrastra aquí tu archivo <span class="text-ipn-guinda">.xlsx</span>, <span class="text-ipn-guinda">.xls</span> o <span class="text-ipn-guinda">.csv</span>
-                    </p>
-                    <p class="text-xs text-slate-500 mt-1">
-                        o haz clic para examinar en tu computadora
-                    </p>
-                    <div class="mt-4 inline-flex items-center gap-2 bg-ipn-guinda hover:bg-ipn-guindaDark text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow transition">
-                        <i class="fa-solid fa-folder-open"></i>
-                        <span>Seleccionar archivo Excel / CSV</span>
-                    </div>
-                </div>
+                        <!-- Zona Drag & Drop para subir origen.xlsx -->
+                        <div id="adminDropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-ipn-guinda/40 hover:border-ipn-guinda bg-ipn-guindaSoft/25 hover:bg-ipn-guindaSoft/50 rounded-2xl p-8 text-center transition-all cursor-pointer group">
+                            <i class="fa-solid fa-file-excel text-4xl text-ipn-guinda group-hover:scale-105 transition-transform mb-3"></i>
+                            <h3 class="text-sm sm:text-base font-extrabold text-slate-900">
+                                Selecciona o arrastra aquí el archivo <span class="text-ipn-guinda">origen.xlsx</span>
+                            </h3>
+                            <p class="text-xs text-slate-600 mt-1 max-w-lg mx-auto">
+                                Lee automáticamente la hoja principal de actas y la hoja <span class="font-mono font-bold text-ipn-guinda">"CORREOS"</span> para vincular los correos electrónicos de cada docente (<span class="font-mono">.xlsx, .xls, .csv</span>).
+                            </p>
+                            <div class="mt-4 inline-flex items-center gap-2 bg-ipn-guinda hover:bg-ipn-guindaDark text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow transition">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span>Subir y Publicar Corte Actualizado</span>
+                            </div>
+                        </div>
+                        <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
 
-                <!-- Notas Breves de Compatibilidad y Reglas -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left pt-2">
-                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                        <div class="text-xs font-bold text-ipn-guinda flex items-center gap-1.5 mb-1">
-                            <i class="fa-solid fa-table-columns"></i>
-                            <span>21 o 17 Columnas</span>
+                        <!-- Barra de progreso de publicación -->
+                        <div id="uploadProgressBox" class="hidden bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-2">
+                            <div class="flex items-center justify-between text-xs font-bold text-indigo-900">
+                                <span id="uploadProgressLabel">Sincronizando registros en la nube...</span>
+                                <span id="uploadProgressPct">0%</span>
+                            </div>
+                            <div class="w-full bg-indigo-200/70 h-2 rounded-full overflow-hidden">
+                                <div id="uploadProgressBar" class="bg-ipn-guinda h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
                         </div>
-                        <p class="text-[11px] text-slate-600">
-                            Acepta archivos con las 21 columnas (incluyendo <span class="font-mono">clave</span>, <span class="font-mono">SEMESTRE</span>, <span class="font-mono">CARR</span> y <span class="font-mono">Jefatura</span>) o reportes SAES de 17 columnas.
-                        </p>
                     </div>
-                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                        <div class="text-xs font-bold text-ipn-guinda flex items-center gap-1.5 mb-1">
-                            <i class="fa-solid fa-code"></i>
-                            <span>Modalidad por 'X'</span>
+
+                    <!-- Columna Derecha: Bitácora del Corte Vigente y Herramientas -->
+                    <div class="lg:col-span-5 space-y-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <h3 class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-clock-rotate-left text-ipn-oro"></i>
+                                    <span>Bitácora del Corte Vigente</span>
+                                </h3>
+                                <span id="adminSyncIndicator" class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600">
+                                    Sin datos
+                                </span>
+                            </div>
+
+                            <dl class="space-y-2.5 text-xs">
+                                <div class="flex justify-between gap-2">
+                                    <dt class="text-slate-500">Archivo publicado:</dt>
+                                    <dd id="metaFileName" class="font-bold text-slate-800 text-right truncate max-w-[210px]">—</dd>
+                                </div>
+                                <div class="flex justify-between gap-2">
+                                    <dt class="text-slate-500">Fecha y hora de carga:</dt>
+                                    <dd id="metaUpdatedAt" class="font-semibold text-slate-800 text-right">—</dd>
+                                </div>
+                                <div class="flex justify-between gap-2">
+                                    <dt class="text-slate-500">Periodo / Evaluación:</dt>
+                                    <dd id="metaPeriodoEval" class="font-semibold text-ipn-guinda text-right">—</dd>
+                                </div>
+                                <div class="flex justify-between gap-2">
+                                    <dt class="text-slate-500">Total de actas activas:</dt>
+                                    <dd id="metaTotalActas" class="font-bold text-slate-800 text-right">0</dd>
+                                </div>
+                                <div class="flex justify-between gap-2">
+                                    <dt class="text-slate-500">Distribución modalidad:</dt>
+                                    <dd id="metaModalidades" class="font-semibold text-slate-700 text-right">—</dd>
+                                </div>
+                                <div class="flex justify-between gap-2">
+                                    <dt class="text-slate-500">Directorio hoja "CORREOS":</dt>
+                                    <dd id="metaCorreosStatus" class="font-bold text-ipn-guinda text-right">0 registros / 0 docentes vinculados</dd>
+                                </div>
+                            </dl>
+
+                            <div class="pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+                                <button type="button" onclick="downloadTemplateExcel()" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer">
+                                    <i class="fa-solid fa-file-arrow-down"></i>
+                                    <span>Plantilla + CORREOS</span>
+                                </button>
+                                <button type="button" onclick="exportBackupJson()" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer">
+                                    <i class="fa-solid fa-file-code"></i>
+                                    <span>Respaldo JSON</span>
+                                </button>
+                            </div>
                         </div>
-                        <p class="text-[11px] text-slate-600">
-                            Si el <strong>3.er carácter</strong> de <span class="font-mono">Secuencia</span> es <span class="font-mono font-bold">X</span> (ej. <span class="font-mono">1IXA2, 5RX12</span>), se clasifica como <strong>No Escolarizada</strong>.
-                        </p>
-                    </div>
-                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                        <div class="text-xs font-bold text-ipn-guinda flex items-center gap-1.5 mb-1">
-                            <i class="fa-solid fa-shield-halved"></i>
-                            <span>Privacidad Local</span>
+
+                        <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 space-y-1.5">
+                            <div class="font-bold flex items-center gap-1.5">
+                                <i class="fa-solid fa-circle-info text-amber-600"></i>
+                                <span>¿Cómo funciona para los Jefes de Carrera?</span>
+                            </div>
+                            <p class="leading-relaxed">
+                                Al publicar el archivo desde esta pestaña, los registros quedan guardados en la base compartida. Cuando los Jefes de Carrera abran el enlace de la plataforma, verán directamente el <strong>Tablero y Seguimiento</strong> actualizado sin necesidad de subir ningún archivo.
+                            </p>
                         </div>
-                        <p class="text-[11px] text-slate-600">
-                            No se realiza lectura automática de rutas externas al abrir ni envío de datos a servidores externos.
-                        </p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- DASHBOARD ANALÍTICO (SE MUESTRA UNA VEZ CARGADO UN ARCHIVO) -->
-        <div id="dashboardContent" class="hidden space-y-6">
+        <!-- ======================================================================== -->
+        <!-- SECCIÓN B: TABLERO Y SEGUIMIENTO PARA JEFES DE CARRERA                   -->
+        <!-- ======================================================================== -->
+        <div id="dashboardWrapper" class="space-y-6">
 
-            <!-- BANNER INFORMATIVO DE CONTEXTO -->
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <div id="contextBannerIcon" class="w-10 h-10 rounded-lg bg-ipn-guinda text-white flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0">
-                        <i class="fa-solid fa-layer-group"></i>
+            <!-- ESTADO DE ESPERA CUANDO AÚN NO SE HA PUBLICADO NINGÚN CORTE -->
+            <section id="emptyStateScreen" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 sm:p-12 text-center">
+                <div class="max-w-xl mx-auto space-y-4">
+                    <div id="emptyStateIcon" class="w-16 h-16 rounded-2xl bg-ipn-guindaSoft text-ipn-guinda border border-ipn-guinda/20 flex items-center justify-center mx-auto text-2xl">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
                     </div>
-                    <div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <h2 id="contextBannerTitle" class="text-base sm:text-lg font-bold text-slate-900">Todas las Jefaturas — Vista Global</h2>
-                            <span id="modalityContextBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                                Escolarizada y No Escolarizada
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-0.5">
-                            Regla activa: 3.er carácter de <code class="px-1 py-0.5 bg-indigo-50 text-indigo-700 font-mono font-bold rounded">Secuencia</code> igual a <code class="px-1 py-0.5 bg-indigo-50 text-indigo-700 font-mono font-bold rounded">X</code> = <strong>No Escolarizada</strong>; de lo contrario = <strong>Escolarizada</strong>.
-                        </p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/80 flex-shrink-0">
-                    <i class="fa-regular fa-calendar-check text-ipn-oro"></i>
-                    <span>Corte: <strong id="periodSummaryLabel" class="text-slate-700">—</strong></span>
-                </div>
-            </div>
-
-            <!-- 6 TARJETAS DE KPIs -->
-            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Actas</p>
-                            <h3 id="kpiTotalActas" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
-                            <i class="fa-solid fa-file-lines"></i>
-                        </div>
-                    </div>
-                    <p id="kpiTotalActasSub" class="text-[11px] text-slate-600 font-medium mt-2">0 Esc. • 0 No Esc. [X]</p>
-                </div>
-
-                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-ipn-guinda uppercase tracking-wider">Avance Alumnos</p>
-                            <h3 id="kpiAvancePct" class="text-2xl font-extrabold text-ipn-guinda mt-1">0%</h3>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-ipn-guindaSoft text-ipn-guinda flex items-center justify-center">
-                            <i class="fa-solid fa-users-viewfinder"></i>
-                        </div>
-                    </div>
-                    <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-                        <div id="kpiAvanceBar" class="bg-ipn-guinda h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                    <p id="kpiAvanceSub" class="text-[11px] text-slate-500 mt-1.5">0 de 0 inscritos</p>
-                </div>
-
-                <div class="bg-white rounded-xl border border-emerald-200 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="quickFilterByStatus('ACTA CAPTURADA Y CONFIRMADA')" title="Clic para filtrar actas confirmadas">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Confirmadas</p>
-                            <h3 id="kpiConfirmadas" class="text-2xl font-extrabold text-emerald-700 mt-1">0</h3>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
-                    </div>
-                    <p id="kpiConfirmadasSub" class="text-[11px] text-emerald-700/80 mt-2">0% del total de actas</p>
-                </div>
-
-                <div class="bg-white rounded-xl border border-amber-300 bg-amber-50/20 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="quickFilterByStatus('ACTA CAPTURADA PERO NO CONFIRMADA')" title="Clic para filtrar actas sin confirmar">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Sin Confirmar</p>
-                            <h3 id="kpiSinConfirmar" class="text-2xl font-extrabold text-amber-600 mt-1">0</h3>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-amber-800 font-medium mt-2">Falta confirmación en SAES</p>
-                </div>
-
-                <div class="bg-white rounded-xl border border-rose-300 bg-rose-50/20 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="quickFilterByStatus('CRITICAL')" title="Clic para filtrar sin registro o rehabilitadas">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Sin Reg. / Rehab.</p>
-                            <h3 id="kpiSinRegistro" class="text-2xl font-extrabold text-rose-600 mt-1">0</h3>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                            <i class="fa-solid fa-circle-xmark"></i>
-                        </div>
-                    </div>
-                    <p id="kpiSinRegistroSub" class="text-[11px] text-rose-800 font-medium mt-2">0 sin reg. • 0 rehab.</p>
-                </div>
-
-                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="togglePendingOnly()" title="Clic para alternar solo docentes con pendientes">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Docentes Pend.</p>
-                            <h3 id="kpiDocentesPend" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-ipn-oroSoft text-ipn-oro flex items-center justify-center">
-                            <i class="fa-solid fa-chalkboard-user"></i>
-                        </div>
-                    </div>
-                    <p id="kpiDocentesPendSub" class="text-[11px] text-slate-500 mt-2">De 0 docentes en vista</p>
-                </div>
-            </section>
-
-            <!-- 3 GRÁFICAS INTERACTIVAS (CHART.JS) -->
-            <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div class="lg:col-span-4 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-800">Estatus de Actas</h3>
-                            <p class="text-xs text-slate-500">Clic en segmento para filtrar</p>
-                        </div>
-                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">Estatus_acta</span>
-                    </div>
-                    <div class="relative flex-grow min-h-[230px] flex items-center justify-center">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-800">Por Modalidad</h3>
-                            <p class="text-xs text-slate-500">3.er carácter 'X' en Secuencia</p>
-                        </div>
-                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">Sec[2]='X'</span>
-                    </div>
-                    <div class="relative flex-grow min-h-[230px]">
-                        <canvas id="modalityChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                        <div>
-                            <h3 id="barChartTitle" class="text-sm font-bold text-slate-800">Avance por Jefatura</h3>
-                            <p id="barChartSubtitle" class="text-xs text-slate-500">Actas confirmadas vs. pendientes</p>
-                        </div>
-                        <div class="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs no-print self-start">
-                            <button type="button" onclick="setSecondaryChartMode('jefatura')" id="btnChartJefatura" class="px-2.5 py-1 rounded-md font-semibold bg-white text-ipn-guinda shadow-sm transition cursor-pointer">Jefatura</button>
-                            <button type="button" onclick="setSecondaryChartMode('semestre')" id="btnChartSemestre" class="px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer">Semestre</button>
-                        </div>
-                    </div>
-                    <div class="relative flex-grow min-h-[230px]">
-                        <canvas id="comparisonChart"></canvas>
+                    <h2 id="emptyStateTitle" class="text-lg sm:text-xl font-extrabold text-slate-900">
+                        Cargando corte vigente de captura...
+                    </h2>
+                    <p id="emptyStateDesc" class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        Consultando la información compartida más reciente para las Jefaturas de Carrera de la ESCA Unidad Santo Tomás.
+                    </p>
+                    <div id="emptyStateActions" class="hidden pt-2">
+                        <button type="button" onclick="switchMainSection('admin')" class="inline-flex items-center gap-2 bg-ipn-guinda hover:bg-ipn-guindaDark text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow transition cursor-pointer">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Ir a Actualizar Origen para publicar el primer corte</span>
+                        </button>
                     </div>
                 </div>
             </section>
 
-            <!-- FILTROS AVANZADOS -->
-            <section class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3 no-print">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-filter text-ipn-guinda"></i>
-                        <h3 class="text-sm font-bold text-slate-800">Filtros Específicos</h3>
-                        <span id="activeFilterCount" class="hidden px-2 py-0.5 text-xs font-bold bg-ipn-guinda text-white rounded-full">0</span>
-                    </div>
+            <!-- CONTENIDO ANALÍTICO COMPLETO -->
+            <div id="dashboardContent" class="hidden space-y-6">
 
-                    <div class="flex flex-wrap items-center gap-3">
-                        <label class="inline-flex items-center gap-2 cursor-pointer select-none bg-amber-50 hover:bg-amber-100/80 border border-amber-200 px-3 py-1.5 rounded-lg transition">
-                            <input type="checkbox" id="filterPendingOnly" onchange="applyFilters()" class="w-4 h-4 text-ipn-guinda rounded border-amber-300 focus:ring-ipn-guinda">
-                            <span class="text-xs font-bold text-amber-900">Solo actas sin confirmar / con pendientes</span>
-                        </label>
-
-                        <button type="button" onclick="resetAllFilters()" class="text-xs font-semibold text-slate-600 hover:text-ipn-guinda underline px-2 py-1 transition cursor-pointer">
-                            Limpiar filtros
-                        </button>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
-                    <div class="lg:col-span-4 relative">
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                <!-- BANNER INFORMATIVO DE CONTEXTO -->
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div id="contextBannerIcon" class="w-10 h-10 rounded-lg bg-ipn-guinda text-white flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0">
+                            <i class="fa-solid fa-layer-group"></i>
                         </div>
-                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Docente, RFC, secuencia (ej. 5RX12), clave o materia..." class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                        <div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h2 id="contextBannerTitle" class="text-base sm:text-lg font-bold text-slate-900">Todas las Jefaturas — Vista Global</h2>
+                                <span id="modalityContextBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                    Escolarizada y No Escolarizada
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                Seguimiento consolidado por Jefatura de Carrera, Modalidad, Semestre y Docente.
+                            </p>
+                        </div>
                     </div>
-
-                    <div class="lg:col-span-3">
-                        <select id="filterCarrera" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
-                            <option value="ALL">Carrera: Todas</option>
-                        </select>
-                    </div>
-
-                    <div class="lg:col-span-2">
-                        <select id="filterPlan" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
-                            <option value="ALL">Plan: Todos</option>
-                        </select>
-                    </div>
-
-                    <div class="lg:col-span-1">
-                        <select id="filterSemestre" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
-                            <option value="ALL">Sem.</option>
-                        </select>
-                    </div>
-
-                    <div class="lg:col-span-2">
-                        <select id="filterStatus" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
-                            <option value="ALL">Estatus: Todos</option>
-                            <option value="ACTA CAPTURADA Y CONFIRMADA">✅ Confirmada</option>
-                            <option value="ACTA CAPTURADA PERO NO CONFIRMADA">⚠️ Sin Confirmar</option>
-                            <option value="SIN REGISTRO">❌ Sin Registro</option>
-                            <option value="ACTA REHABILITADA Y CAPTURADA">🔄 Rehab. y Capturada</option>
-                            <option value="ACTA REHABILITADA">🟠 Rehabilitada</option>
-                            <option value="CRITICAL">🚨 Críticos</option>
-                        </select>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TABS DE ANÁLISIS: POR DOCENTE Y LISTADO PLANO DE ACTAS -->
-            <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="border-b border-slate-200 bg-slate-50/70 px-4 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div class="flex space-x-2" role="tablist">
-                        <button type="button" id="tabBtnDocentes" onclick="switchTab('docentes')" class="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-ipn-guinda text-ipn-guinda bg-white flex items-center gap-2 transition cursor-pointer">
-                            <i class="fa-solid fa-users-rectangle"></i>
-                            <span>Por Docente</span>
-                            <span id="badgeCountDocentes" class="px-2 py-0.5 text-[11px] rounded-full bg-ipn-guinda text-white">0</span>
-                        </button>
-
-                        <button type="button" id="tabBtnActas" onclick="switchTab('actas')" class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-lg border-b-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60 flex items-center gap-2 transition cursor-pointer">
-                            <i class="fa-solid fa-table-list"></i>
-                            <span>Listado de Actas</span>
-                            <span id="badgeCountActas" class="px-2 py-0.5 text-[11px] rounded-full bg-slate-200 text-slate-700">0</span>
-                        </button>
-                    </div>
-
-                    <div id="docentesTabControls" class="pb-2 sm:pb-0 flex items-center gap-2 no-print">
-                        <select id="sortDocentes" onchange="renderDocentesView()" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-ipn-guinda">
-                            <option value="pendientes_desc">Ordenar: Mayor rezago</option>
-                            <option value="sin_confirmar_desc">Ordenar: Más sin confirmar</option>
-                            <option value="nombre_asc">Ordenar: Nombre (A - Z)</option>
-                            <option value="avance_asc">Ordenar: Menor % avance</option>
-                        </select>
-                        <button type="button" onclick="expandCollapseAllDocentes(true)" class="text-xs px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-slate-700 font-medium transition cursor-pointer" title="Expandir todos">
-                            <i class="fa-solid fa-angles-down"></i>
-                        </button>
-                        <button type="button" onclick="expandCollapseAllDocentes(false)" class="text-xs px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-slate-700 font-medium transition cursor-pointer" title="Contraer todos">
-                            <i class="fa-solid fa-angles-up"></i>
-                        </button>
+                    <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/80 flex-shrink-0">
+                        <i class="fa-regular fa-calendar-check text-ipn-oro"></i>
+                        <span>Corte: <strong id="periodSummaryLabel" class="text-slate-700">—</strong></span>
                     </div>
                 </div>
 
-                <!-- VISTA 1: ACORDEÓN POR DOCENTE -->
-                <div id="viewDocentes" class="p-4 space-y-3">
-                    <div id="docentesListContainer" class="space-y-3"></div>
-                </div>
-
-                <!-- VISTA 2: TABLA COMPLETA DE ACTAS -->
-                <div id="viewActas" class="hidden">
-                    <div class="overflow-x-auto custom-scrollbar">
-                        <table class="min-w-full divide-y divide-slate-200 text-xs">
-                            <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider">
-                                <tr>
-                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Jefatura')">Jefatura / Carrera <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Secuencia')">Secuencia / Modalidad <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                    <th class="px-3 py-3 text-center cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('SEMESTRE')">Sem. <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Materia')">Clave / Asignatura <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Nombre')">Docente / RFC <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Fecha_limite')">Fecha Límite SAES <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                    <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Estatus_acta')">Estatus Acta <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                    <th class="px-3 py-3 text-right cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Pendientes')">Alumnos (Cal/Insc) <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                </tr>
-                            </thead>
-                            <tbody id="actasTableBody" class="bg-white divide-y divide-slate-200"></tbody>
-                        </table>
+                <!-- 6 TARJETAS DE KPIs -->
+                <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Actas</p>
+                                <h3 id="kpiTotalActas" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </div>
+                        </div>
+                        <p id="kpiTotalActasSub" class="text-[11px] text-slate-600 font-medium mt-2">0 Escolarizada • 0 No Escolarizada</p>
                     </div>
 
-                    <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 no-print">
-                        <div id="paginationInfo">Mostrando 0 a 0 de 0 actas</div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-ipn-guinda uppercase tracking-wider">Avance Alumnos</p>
+                                <h3 id="kpiAvancePct" class="text-2xl font-extrabold text-ipn-guinda mt-1">0%</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-ipn-guindaSoft text-ipn-guinda flex items-center justify-center">
+                                <i class="fa-solid fa-users-viewfinder"></i>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                            <div id="kpiAvanceBar" class="bg-ipn-guinda h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <p id="kpiAvanceSub" class="text-[11px] text-slate-500 mt-1.5">0 de 0 inscritos</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-emerald-200 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="quickFilterByStatus('ACTA CAPTURADA Y CONFIRMADA')" title="Clic para filtrar actas confirmadas">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Confirmadas</p>
+                                <h3 id="kpiConfirmadas" class="text-2xl font-extrabold text-emerald-700 mt-1">0</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                        </div>
+                        <p id="kpiConfirmadasSub" class="text-[11px] text-emerald-700/80 mt-2">0% del total de actas</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-amber-300 bg-amber-50/20 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="quickFilterByStatus('ACTA CAPTURADA PERO NO CONFIRMADA')" title="Clic para filtrar actas sin confirmar">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Sin Confirmar</p>
+                                <h3 id="kpiSinConfirmar" class="text-2xl font-extrabold text-amber-600 mt-1">0</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-amber-800 font-medium mt-2">Falta confirmación en SAES</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-rose-300 bg-rose-50/20 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="quickFilterByStatus('CRITICAL')" title="Clic para filtrar sin registro o rehabilitadas">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Sin Reg. / Rehab.</p>
+                                <h3 id="kpiSinRegistro" class="text-2xl font-extrabold text-rose-600 mt-1">0</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </div>
+                        </div>
+                        <p id="kpiSinRegistroSub" class="text-[11px] text-rose-800 font-medium mt-2">0 sin reg. • 0 rehab.</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="togglePendingOnly()" title="Clic para alternar solo docentes con pendientes">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Docentes Pend.</p>
+                                <h3 id="kpiDocentesPend" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-ipn-oroSoft text-ipn-oro flex items-center justify-center">
+                                <i class="fa-solid fa-chalkboard-user"></i>
+                            </div>
+                        </div>
+                        <p id="kpiDocentesPendSub" class="text-[11px] text-slate-500 mt-2">De 0 docentes en vista</p>
+                    </div>
+                </section>
+
+                <!-- 3 GRÁFICAS INTERACTIVAS (CHART.JS) -->
+                <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-4 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Estatus de Actas</h3>
+                                <p class="text-xs text-slate-500">Clic en segmento para filtrar</p>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">Estatus</span>
+                        </div>
+                        <div class="relative flex-grow min-h-[230px] flex items-center justify-center">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Por Modalidad</h3>
+                                <p class="text-xs text-slate-500">Escolarizada vs. No Escolarizada</p>
+                            </div>
+                            <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">Modalidad</span>
+                        </div>
+                        <div class="relative flex-grow min-h-[230px]">
+                            <canvas id="modalityChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                            <div>
+                                <h3 id="barChartTitle" class="text-sm font-bold text-slate-800">Avance por Jefatura</h3>
+                                <p id="barChartSubtitle" class="text-xs text-slate-500">Actas confirmadas vs. pendientes</p>
+                            </div>
+                            <div class="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs no-print self-start">
+                                <button type="button" onclick="setSecondaryChartMode('jefatura')" id="btnChartJefatura" class="px-2.5 py-1 rounded-md font-semibold bg-white text-ipn-guinda shadow-sm transition cursor-pointer">Jefatura</button>
+                                <button type="button" onclick="setSecondaryChartMode('semestre')" id="btnChartSemestre" class="px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer">Semestre</button>
+                            </div>
+                        </div>
+                        <div class="relative flex-grow min-h-[230px]">
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FILTROS ESPECÍFICOS (SIN EL SELECTOR DE CARRERAS CON PREFIJO O-/C-) -->
+                <section class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3 no-print">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
                         <div class="flex items-center gap-2">
-                            <select id="pageSizeSelect" onchange="changePageSize()" class="bg-white border border-slate-300 rounded-md px-2 py-1 text-xs">
-                                <option value="15">15 por página</option>
-                                <option value="30">30 por página</option>
-                                <option value="50">50 por página</option>
-                                <option value="100">100 por página</option>
-                            </select>
-                            <button type="button" id="btnPrevPage" onclick="changePage(-1)" class="px-3 py-1 bg-white border border-slate-300 rounded-md hover:bg-slate-100 disabled:opacity-50 font-medium cursor-pointer">Anterior</button>
-                            <span id="pageIndicator" class="font-bold text-slate-800 px-2">Página 1</span>
-                            <button type="button" id="btnNextPage" onclick="changePage(1)" class="px-3 py-1 bg-white border border-slate-300 rounded-md hover:bg-slate-100 disabled:opacity-50 font-medium cursor-pointer">Siguiente</button>
+                            <i class="fa-solid fa-filter text-ipn-guinda"></i>
+                            <h3 class="text-sm font-bold text-slate-800">Filtros Específicos</h3>
+                            <span id="activeFilterCount" class="hidden px-2 py-0.5 text-xs font-bold bg-ipn-guinda text-white rounded-full">0</span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-3">
+                            <label class="inline-flex items-center gap-2 cursor-pointer select-none bg-amber-50 hover:bg-amber-100/80 border border-amber-200 px-3 py-1.5 rounded-lg transition">
+                                <input type="checkbox" id="filterPendingOnly" onchange="applyFilters()" class="w-4 h-4 text-ipn-guinda rounded border-amber-300 focus:ring-ipn-guinda">
+                                <span class="text-xs font-bold text-amber-900">Solo actas sin confirmar / con pendientes</span>
+                            </label>
+
+                            <button type="button" onclick="resetAllFilters()" class="text-xs font-semibold text-slate-600 hover:text-ipn-guinda underline px-2 py-1 transition cursor-pointer">
+                                Limpiar filtros
+                            </button>
                         </div>
                     </div>
-                </div>
-            </section>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                        <div class="lg:col-span-5 relative">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </div>
+                            <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Buscar docente, RFC, secuencia, clave o materia..." class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <select id="filterPlan" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                                <option value="ALL">Plan: Todos</option>
+                            </select>
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <select id="filterSemestre" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                                <option value="ALL">Semestre: Todos</option>
+                            </select>
+                        </div>
+
+                        <div class="lg:col-span-3">
+                            <select id="filterStatus" onchange="applyFilters()" class="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-ipn-guinda focus:bg-white transition">
+                                <option value="ALL">Estatus: Todos</option>
+                                <option value="ACTA CAPTURADA Y CONFIRMADA">Confirmada</option>
+                                <option value="ACTA CAPTURADA PERO NO CONFIRMADA">Sin Confirmar</option>
+                                <option value="SIN REGISTRO">Sin Registro</option>
+                                <option value="ACTA REHABILITADA Y CAPTURADA">Rehab. y Capturada</option>
+                                <option value="ACTA REHABILITADA">Rehabilitada</option>
+                                <option value="CRITICAL">Críticos (Sin Reg. / Rehab.)</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TABS DE ANÁLISIS: POR DOCENTE Y LISTADO PLANO DE ACTAS -->
+                <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="border-b border-slate-200 bg-slate-50/70 px-4 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex space-x-2" role="tablist">
+                            <button type="button" id="tabBtnDocentes" onclick="switchTab('docentes')" class="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-lg border-b-2 border-ipn-guinda text-ipn-guinda bg-white flex items-center gap-2 transition cursor-pointer">
+                                <i class="fa-solid fa-users-rectangle"></i>
+                                <span>Por Docente</span>
+                                <span id="badgeCountDocentes" class="px-2 py-0.5 text-[11px] rounded-full bg-ipn-guinda text-white">0</span>
+                        <div id="docentesTabControls" class="pb-2 sm:pb-0 flex flex-wrap items-center gap-2 no-print">
+                            <div class="inline-flex items-center rounded-lg border border-ipn-guinda/30 bg-ipn-guindaSoft/60 overflow-hidden" title="Copiar correos electrónicos de docentes con pendientes en la vista filtrada">
+                                <button type="button" onclick="copyBulkPendingEmails('; ')" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-ipn-guinda hover:bg-ipn-guinda hover:text-white transition cursor-pointer">
+                                    <i class="fa-solid fa-envelopes-bulk"></i>
+                                    <span>Copiar correos pend. (;)</span>
+                                </button>
+                                <button type="button" onclick="copyBulkPendingEmails(', ')" class="px-2 py-1.5 text-xs font-bold text-ipn-guinda border-l border-ipn-guinda/25 hover:bg-ipn-guinda hover:text-white transition cursor-pointer" title="Copiar separados por coma para Gmail">
+                                    (,)
+                                </button>
+                            </div>
+                            <select id="sortDocentes" onchange="renderDocentesView()" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-ipn-guinda">
+                                <option value="pendientes_desc">Ordenar: Mayor rezago</option>
+                                <option value="sin_confirmar_desc">Ordenar: Más sin confirmar</option>
+                                <option value="nombre_asc">Ordenar: Nombre (A - Z)</option>
+                                <option value="avance_asc">Ordenar: Menor % avance</option>
+                            </select>
+                            <button type="button" onclick="expandCollapseAllDocentes(true)" class="text-xs px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-slate-700 font-medium transition cursor-pointer" title="Expandir todos">
+                                <i class="fa-solid fa-angles-down"></i>
+                            </button>
+                            <button type="button" onclick="expandCollapseAllDocentes(false)" class="text-xs px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-slate-700 font-medium transition cursor-pointer" title="Contraer todos">
+                                <i class="fa-solid fa-angles-up"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- VISTA 1: ACORDEÓN POR DOCENTE -->
+                    <div id="viewDocentes" class="p-4 space-y-3">
+                        <div id="docentesListContainer" class="space-y-3"></div>
+                    </div>
+
+                    <!-- VISTA 2: TABLA COMPLETA DE ACTAS -->
+                    <div id="viewActas" class="hidden">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="min-w-full divide-y divide-slate-200 text-xs">
+                                <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Jefatura')">Jefatura <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                        <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Secuencia')">Secuencia / Modalidad <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                        <th class="px-3 py-3 text-center cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('SEMESTRE')">Sem. <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                        <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Materia')">Clave / Asignatura <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                        <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Nombre')">Docente / RFC <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                        <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Fecha_limite')">Fecha Límite SAES <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                        <th class="px-3 py-3 text-left cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Estatus_acta')">Estatus Acta <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                        <th class="px-3 py-3 text-right cursor-pointer hover:bg-slate-200/70" onclick="sortActasTable('Pendientes')">Alumnos (Cal/Insc) <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="actasTableBody" class="bg-white divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 no-print">
+                            <div id="paginationInfo">Mostrando 0 a 0 de 0 actas</div>
+                            <div class="flex items-center gap-2">
+                                <select id="pageSizeSelect" onchange="changePageSize()" class="bg-white border border-slate-300 rounded-md px-2 py-1 text-xs">
+                                    <option value="15">15 por página</option>
+                                    <option value="30">30 por página</option>
+                                    <option value="50">50 por página</option>
+                                    <option value="100">100 por página</option>
+                                </select>
+                                <button type="button" id="btnPrevPage" onclick="changePage(-1)" class="px-3 py-1 bg-white border border-slate-300 rounded-md hover:bg-slate-100 disabled:opacity-50 font-medium cursor-pointer">Anterior</button>
+                                <span id="pageIndicator" class="font-bold text-slate-800 px-2">Página 1</span>
+                                <button type="button" id="btnNextPage" onclick="changePage(1)" class="px-3 py-1 bg-white border border-slate-300 rounded-md hover:bg-slate-100 disabled:opacity-50 font-medium cursor-pointer">Siguiente</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
     </main>
 
@@ -577,7 +664,7 @@
             <div class="flex items-center gap-2">
                 <span class="font-bold text-ipn-guinda">IPN • ESCA Unidad Santo Tomás</span>
                 <span>—</span>
-                <span>Seguimiento de Captura SAES (Modo Carga Manual)</span>
+                <span>Seguimiento de Captura SAES</span>
             </div>
             <div>
                 <span>"La Técnica al Servicio de la Patria"</span>
@@ -587,8 +674,8 @@
 
     <!-- MODAL: GENERADOR DE RECORDATORIO INSTITUCIONAL -->
     <div id="reminderModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
-            <div class="ipn-gradient px-5 py-4 text-white flex items-center justify-between ipn-gold-border">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 max-h-[92vh] flex flex-col">
+            <div class="ipn-gradient px-5 py-4 text-white flex items-center justify-between ipn-gold-border flex-shrink-0">
                 <div class="flex items-center gap-2.5">
                     <i class="fa-solid fa-envelope-open-text text-ipn-oroLight text-lg"></i>
                     <div>
@@ -601,35 +688,57 @@
                 </button>
             </div>
 
-            <div class="p-5 space-y-4">
+            <div class="p-5 space-y-3.5 overflow-y-auto custom-scrollbar">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Asunto sugerido:</label>
-                    <input type="text" id="reminderSubject" readonly class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800">
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="reminderToEmail" class="block text-xs font-bold text-slate-700 uppercase">Para (Correo del docente):</label>
+                        <span id="reminderEmailSourceBadge" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                            Directorio CORREOS
+                        </span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="email" id="reminderToEmail" oninput="updateReminderMailLinks()" placeholder="Ingresa o edita el correo electrónico del docente..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-ipn-guinda focus:bg-white">
+                        <button type="button" onclick="copyReminderEmailOnly()" class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg transition cursor-pointer" title="Copiar únicamente la dirección de correo">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Copiar Correo</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="reminderSubject" class="block text-xs font-bold text-slate-700 uppercase mb-1">Asunto:</label>
+                    <input type="text" id="reminderSubject" oninput="updateReminderMailLinks()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-ipn-guinda focus:bg-white">
                 </div>
 
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="block text-xs font-bold text-slate-700 uppercase">Mensaje listo para copiar:</label>
+                        <label for="reminderBody" class="block text-xs font-bold text-slate-700 uppercase">Mensaje del recordatorio:</label>
                         <span id="copyFeedback" class="hidden text-xs font-bold text-emerald-600 flex items-center gap-1">
                             <i class="fa-solid fa-check"></i> ¡Copiado al portapapeles!
                         </span>
                     </div>
-                    <textarea id="reminderBody" rows="11" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-xs sm:text-sm text-slate-800 font-mono leading-relaxed focus:outline-none focus:border-ipn-guinda"></textarea>
+                    <textarea id="reminderBody" rows="10" oninput="updateReminderMailLinks()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-xs sm:text-sm text-slate-800 font-mono leading-relaxed focus:outline-none focus:border-ipn-guinda focus:bg-white"></textarea>
                 </div>
             </div>
 
-            <div class="bg-slate-50 px-5 py-3.5 border-t border-slate-200 flex flex-wrap items-center justify-end gap-2.5">
-                <button type="button" onclick="closeReminderModal()" class="px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition cursor-pointer">
+            <div class="bg-slate-50 px-5 py-3.5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 flex-shrink-0">
+                <button type="button" onclick="closeReminderModal()" class="px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition cursor-pointer">
                     Cerrar
                 </button>
-                <a id="mailtoLink" href="#" class="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    <span>Abrir Correo</span>
-                </a>
-                <button type="button" onclick="copyReminderText()" class="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold bg-ipn-guinda hover:bg-ipn-guindaDark text-white rounded-lg shadow transition cursor-pointer">
-                    <i class="fa-regular fa-copy"></i>
-                    <span>Copiar Texto</span>
-                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a id="mailtoLink" href="#" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Abrir en Cliente de Correo</span>
+                    </a>
+                    <a id="gmailLink" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                        <i class="fa-brands fa-google"></i>
+                        <span>Abrir en Gmail</span>
+                    </a>
+                    <button type="button" onclick="copyReminderText()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold bg-ipn-guinda hover:bg-ipn-guindaDark text-white rounded-lg shadow transition cursor-pointer">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>Copiar Mensaje Completo</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -647,9 +756,10 @@
                 </button>
             </div>
             <div class="p-5 space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
-                <p><strong>1. Carga manual del archivo:</strong> Haz clic en <em>Cargar archivo Excel</em> o arrastra tu archivo <span class="font-mono">.xlsx</span> / <span class="font-mono">.csv</span> desde tu carpeta local. No se realiza lectura automática al abrir la página.</p>
-                <p><strong>2. Jefatura y Modalidad:</strong> Filtra por tu <em>Jefatura</em> (incluyendo <em>FORMACIÓN BÁSICA</em>) y por <em>Modalidad</em>. Toda secuencia con <span class="font-mono font-bold">X</span> en su <strong>3.er carácter</strong> se identifica automáticamente como <strong>No Escolarizada</strong>.</p>
-                <p><strong>3. Seguimiento y Recordatorios:</strong> Expande cada docente para ver sus secuencias, filtra por estatus (<em>Sin Confirmar</em>, <em>Sin Registro</em> o <em>Rehabilitada</em>) y usa <em>Recordatorio</em> para generar el mensaje de seguimiento o <em>Exportar XLSX</em> para guardar la vista filtrada.</p>
+                <p><strong>1. Consulta directa del corte vigente:</strong> Al abrir la plataforma verás automáticamente el corte publicado más reciente sin necesidad de cargar archivos.</p>
+                <p><strong>2. Filtros por Jefatura y Modalidad:</strong> Selecciona tu <em>Jefatura</em> (incluyendo <em>FORMACIÓN BÁSICA</em>), filtra por modalidad (<em>Escolarizada</em> o <em>No Escolarizada</em>), semestre o estatus de acta.</p>
+                <p><strong>3. Seguimiento y Recordatorios:</strong> Expande cada docente para revisar sus secuencias y usa el botón <em>Recordatorio</em> para copiar el mensaje institucional o <em>Exportar XLSX</em> para descargar el reporte filtrado.</p>
+                <p><strong>4. Actualización de origen (Administración):</strong> El personal encargado puede subir el archivo <span class="font-mono">origen.xlsx</span> desde la pestaña <em>Actualizar Origen</em> para reflejar los cambios en tiempo real.</p>
             </div>
             <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 flex justify-end">
                 <button type="button" onclick="closeGuideModal()" class="px-4 py-2 text-xs sm:text-sm font-bold bg-ipn-guinda hover:bg-ipn-guindaDark text-white rounded-lg transition cursor-pointer">
@@ -666,6 +776,206 @@
             <span id="toastMessage">Operación completada</span>
         </div>
     </div>
+
+    <!-- INTEGRACIÓN FIREBASE FIRESTORE PARA PERSISTENCIA COMPARTIDA -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saes-esca-st-monitor';
+        const rawConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let currentMeta = null;
+
+        // Exponer puente de persistencia compartida a las funciones de la aplicación
+        window.sharedStore = {
+            isCloudReady: false,
+            meta: null,
+            saveDataset: async function(records, fileName, adminPin, newAdminPin, emailDirectoryObj, emailStats) {
+                const nowIso = new Date().toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+                const noEscCount = records.filter(r => r.Modalidad === 'No Escolarizada').length;
+                const escCount = records.length - noEscCount;
+
+                // Validar PIN si ya existía uno configurado
+                if (currentMeta && currentMeta.pinHash) {
+                    const providedHash = await hashPin(adminPin || '');
+                    if (providedHash !== currentMeta.pinHash) {
+                        throw new Error('PIN_INVALIDO');
+                    }
+                }
+
+                let nextPinHash = currentMeta ? (currentMeta.pinHash || '') : '';
+                if (newAdminPin && newAdminPin.trim().length > 0) {
+                    nextPinHash = await hashPin(newAdminPin.trim());
+                }
+
+                const metaPayload = {
+                    fileName: fileName,
+                    updatedAt: nowIso,
+                    updatedTimestamp: Date.now(),
+                    periodo: records[0]?.Periodo_escolar || '—',
+                    evaluacion: records[0]?.Evaluacion || '—',
+                    totalActas: records.length,
+                    escCount: escCount,
+                    noEscCount: noEscCount,
+                    correosRowsCount: emailStats?.rowsRead || 0,
+                    correosLinkedDocentes: emailStats?.linkedDocentes || 0,
+                    pinHash: nextPinHash
+                };
+
+                if (db && currentUser) {
+                    const chunksCol = collection(db, 'artifacts', appId, 'public', 'data', 'saes_corte_chunks');
+                    // Limpiar chunks previos
+                    const existingSnap = await getDocs(chunksCol);
+                    for (const d of existingSnap.docs) {
+                        await deleteDoc(d.ref);
+                    }
+
+                    // Dividir en lotes de 450 registros para respetar límites de tamaño de documento
+                    const CHUNK_SIZE = 450;
+                    const totalChunks = Math.ceil(records.length / CHUNK_SIZE);
+                    for (let i = 0; i < totalChunks; i++) {
+                        const slice = records.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+                        const chunkRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte_chunks', `chunk_${String(i).padStart(4, '0')}`);
+                        await setDoc(chunkRef, {
+                            index: i,
+                            payload: JSON.stringify(slice)
+                        });
+                        if (typeof window.updateUploadProgress === 'function') {
+                            const pct = Math.round(((i + 1) / (totalChunks + 2)) * 100);
+                            window.updateUploadProgress(pct, `Guardando bloque ${i + 1} de ${totalChunks}...`);
+                        }
+                    }
+
+                    // Guardar directorio de correos mapeado desde la hoja "CORREOS"
+                    const emailsRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte_correos', 'current');
+                    await setDoc(emailsRef, {
+                        payload: JSON.stringify(emailDirectoryObj || { byRfc: {}, byName: {}, stats: emailStats || { rowsRead: 0, linkedDocentes: 0 } })
+                    });
+
+                    if (typeof window.updateUploadProgress === 'function') {
+                        window.updateUploadProgress(92, 'Sincronizando directorio de correos...');
+                    }
+
+                    metaPayload.totalChunks = totalChunks;
+                    const metaRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte_meta', 'current');
+                    await setDoc(metaRef, metaPayload);
+                    if (typeof window.updateUploadProgress === 'function') {
+                        window.updateUploadProgress(100, '¡Sincronización completada!');
+                    }
+                } else {
+                    // Respaldo en memoria de sesión si no hay configuración de nube activa
+                    currentMeta = metaPayload;
+                    window.onSharedDatasetUpdated(records, metaPayload, emailDirectoryObj);
+                }
+            }
+        };
+
+        async function hashPin(pin) {
+            const msgBuffer = new TextEncoder().encode(pin);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function initSharedCloud() {
+            if (!rawConfig) {
+                window.setCloudStatusBadge('offline', 'Modo sesión local');
+                window.tryFallbackOrigenFetch();
+                return;
+            }
+
+            try {
+                const app = initializeApp(rawConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                currentUser = auth.currentUser;
+                if (!currentUser) {
+                    window.setCloudStatusBadge('offline', 'Sin sesión');
+                    window.tryFallbackOrigenFetch();
+                    return;
+                }
+
+                window.sharedStore.isCloudReady = true;
+                window.setCloudStatusBadge('online', 'Base compartida activa');
+
+                const metaRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte_meta', 'current');
+                onSnapshot(metaRef, async (docSnap) => {
+                    if (!docSnap.exists()) {
+                        currentMeta = null;
+                        window.sharedStore.meta = null;
+                        window.tryFallbackOrigenFetch();
+                        return;
+                    }
+
+                    const meta = docSnap.data();
+                    currentMeta = meta;
+                    window.sharedStore.meta = meta;
+
+                    if (meta.pinHash) {
+                        document.getElementById('pinHintBadge').textContent = 'PIN de administrador activo: ingrésalo para publicar cambios.';
+                    }
+
+                    const chunksCol = collection(db, 'artifacts', appId, 'public', 'data', 'saes_corte_chunks');
+                    const chunksSnap = await getDocs(chunksCol);
+                    const sortedDocs = chunksSnap.docs
+                        .map(d => d.data())
+                        .sort((a, b) => (a.index || 0) - (b.index || 0));
+
+                    let combinedRecords = [];
+                    for (const item of sortedDocs) {
+                        if (item.payload) {
+                            const parsedSlice = JSON.parse(item.payload);
+                            combinedRecords = combinedRecords.concat(parsedSlice);
+                        }
+                    }
+
+                    // Recuperar directorio de correos compartido si existe
+                    let sharedEmailDir = null;
+                    try {
+                        const emailsCol = collection(db, 'artifacts', appId, 'public', 'data', 'saes_corte_correos');
+                        const emailsSnap = await getDocs(emailsCol);
+                        const currentEmailDoc = emailsSnap.docs.find(d => d.id === 'current');
+                        if (currentEmailDoc && currentEmailDoc.data()?.payload) {
+                            sharedEmailDir = JSON.parse(currentEmailDoc.data().payload);
+                        }
+                    } catch (emailErr) {
+                        console.warn('No se pudo leer directorio compartido de correos:', emailErr);
+                    }
+
+                    if (combinedRecords.length > 0) {
+                        window.onSharedDatasetUpdated(combinedRecords, meta, sharedEmailDir);
+                    } else {
+                        window.tryFallbackOrigenFetch();
+                    }
+                }, (error) => {
+                    console.error('Error escuchando metadatos compartidos:', error);
+                    window.setCloudStatusBadge('offline', 'Error de sincronización');
+                    window.tryFallbackOrigenFetch();
+                });
+
+            } catch (err) {
+                console.error('Error inicializando base compartida:', err);
+                window.setCloudStatusBadge('offline', 'Modo sesión local');
+                window.tryFallbackOrigenFetch();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initSharedCloud();
+        });
+    </script>
 
     <script>
         // ============================================================================
@@ -688,6 +998,7 @@
         };
 
         /**
+         * Regla interna conservada al 100% sin mostrar anotación en UI:
          * Si el tercer carácter (índice 2, case-insensitive) de Secuencia es 'X',
          * se clasifica como 'No Escolarizada'; en caso contrario, 'Escolarizada'.
          */
@@ -704,8 +1015,19 @@
             return /^[1-9]$/.test(firstChar) ? firstChar : '';
         }
 
+        /**
+         * Limpia prefijos tipo "O-", "C-", "R-" en cadenas de carrera/jefatura
+         */
+        function cleanCarreraPrefix(rawName) {
+            return String(rawName || '')
+                .trim()
+                .toUpperCase()
+                .replace(/^[A-Z]\s*-\s*/, '')
+                .trim();
+        }
+
         function deriveJefatura(carrCode, semestreStr, existingJefatura) {
-            const cleanJef = String(existingJefatura || '').trim().toUpperCase();
+            const cleanJef = cleanCarreraPrefix(existingJefatura);
             if (cleanJef) return cleanJef;
             const sem = parseInt(semestreStr, 10);
             if (sem === 1 || sem === 2) return 'FORMACIÓN BÁSICA';
@@ -713,10 +1035,15 @@
         }
 
         // ============================================================================
-        // 2. ESTADO GLOBAL (INICIA VACÍO EN MODO CARGA MANUAL)
+        // 2. ESTADO GLOBAL Y NAVEGACIÓN ENTRE PESTAÑAS PRINCIPALES
         // ============================================================================
         let rawRecords = [];
         let filteredRecords = [];
+        let emailDirectory = {
+            byRfc: {},
+            byName: {},
+            stats: { rowsRead: 0, linkedDocentes: 0 }
+        };
         let secondaryChartMode = 'jefatura';
         let expandedDocentes = new Set();
 
@@ -729,72 +1056,195 @@
         let modalityChartInstance = null;
         let comparisonChartInstance = null;
 
-        // ============================================================================
-        // 3. INICIALIZACIÓN LIMPIA (SIN FETCH AUTOMÁTICO DE ./origen.xlsx)
-        // ============================================================================
-        window.addEventListener('DOMContentLoaded', () => {
-            setupDragAndDrop();
-        });
+        function normalizePersonName(name) {
+            return String(name || '')
+                .trim()
+                .toUpperCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^A-Z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
 
-        function setupDragAndDrop() {
-            const zones = [
-                document.getElementById('heroDropZone'),
-                document.getElementById('compactDropZone')
-            ].filter(Boolean);
+        function normalizeRfcKey(rfc) {
+            return String(rfc || '')
+                .trim()
+                .toUpperCase()
+                .replace(/\s+/g, '');
+        }
 
-            zones.forEach(zone => {
-                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                    zone.addEventListener(eventName, (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }, false);
-                });
+        function resolveDocenteEmail(rfc, nombre) {
+            const normRfc = normalizeRfcKey(rfc);
+            if (normRfc && emailDirectory.byRfc && emailDirectory.byRfc[normRfc]) {
+                return emailDirectory.byRfc[normRfc];
+            }
+            const normName = normalizePersonName(nombre);
+            if (normName && emailDirectory.byName && emailDirectory.byName[normName]) {
+                return emailDirectory.byName[normName];
+            }
+            return '';
+        }
 
-                ['dragenter', 'dragover'].forEach(eventName => {
-                    zone.addEventListener(eventName, () => zone.classList.add('drop-zone-active'), false);
-                });
+        function computeLinkedDocentesCount(records, dirObj) {
+            const seenRfcs = new Set();
+            let linked = 0;
+            records.forEach(r => {
+                const key = normalizeRfcKey(r.RFC) || normalizePersonName(r.Nombre);
+                if (!key || seenRfcs.has(key)) return;
+                seenRfcs.add(key);
+                const byRfc = dirObj?.byRfc?.[normalizeRfcKey(r.RFC)];
+                const byName = dirObj?.byName?.[normalizePersonName(r.Nombre)];
+                if (byRfc || byName) linked++;
+            });
+            return linked;
+        }
 
-                ['dragleave', 'drop'].forEach(eventName => {
-                    zone.addEventListener(eventName, () => zone.classList.remove('drop-zone-active'), false);
-                });
+        window.setCloudStatusBadge = function(state, text) {
+            const badge = document.getElementById('cloudStatusBadge');
+            if (!badge) return;
+            if (state === 'online') {
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span>${text}</span>`;
+            } else {
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-300"></span><span>${text}</span>`;
+            }
+        };
 
-                zone.addEventListener('drop', (e) => {
-                    const files = e.dataTransfer.files;
-                    if (files && files.length > 0) {
-                        processUploadedFile(files[0]);
+        window.updateUploadProgress = function(pct, label) {
+            const box = document.getElementById('uploadProgressBox');
+            box.classList.remove('hidden');
+            document.getElementById('uploadProgressPct').textContent = `${pct}%`;
+            document.getElementById('uploadProgressBar').style.width = `${pct}%`;
+            document.getElementById('uploadProgressLabel').textContent = label;
+        };
+
+        // Intentar lectura opcional de ./origen.xlsx si aún no hay corte en la nube
+        window.tryFallbackOrigenFetch = async function() {
+            if (rawRecords.length > 0) return;
+            try {
+                if (window.location.protocol === 'file:') {
+                    showNoDataReadyState();
+                    return;
+                }
+                const resp = await fetch(`./origen.xlsx?v=${Date.now()}`, { cache: 'no-store' });
+                if (!resp.ok) {
+                    showNoDataReadyState();
+                    return;
+                }
+                const buf = await resp.arrayBuffer();
+                const parsedBundle = parseWorkbookBundle(buf);
+                if (parsedBundle.records.length > 0) {
+                    const meta = {
+                        fileName: 'origen.xlsx (Repositorio)',
+                        updatedAt: new Date().toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }),
+                        periodo: parsedBundle.records[0].Periodo_escolar || '—',
+                        evaluacion: parsedBundle.records[0].Evaluacion || '—',
+                        totalActas: parsedBundle.records.length,
+                        noEscCount: parsedBundle.records.filter(r => r.Modalidad === 'No Escolarizada').length,
+                        escCount: parsedBundle.records.filter(r => r.Modalidad === 'Escolarizada').length,
+                        correosRowsCount: parsedBundle.emailDirectory.stats.rowsRead,
+                        correosLinkedDocentes: parsedBundle.emailDirectory.stats.linkedDocentes
+                    };
+                    window.onSharedDatasetUpdated(parsedBundle.records, meta, parsedBundle.emailDirectory);
+                } else {
+                    showNoDataReadyState();
+                }
+            } catch (e) {
+                showNoDataReadyState();
+            }
+        };
+
+        function showNoDataReadyState() {
+            document.getElementById('emptyStateIcon').innerHTML = '<i class="fa-solid fa-folder-open"></i>';
+            document.getElementById('emptyStateTitle').textContent = 'Aún no se ha publicado un archivo origen';
+            document.getElementById('emptyStateDesc').textContent = 'Para que las Jefaturas de Carrera visualicen el avance de captura, el administrador debe subir el archivo origen.xlsx en la pestaña "Actualizar Origen".';
+            document.getElementById('emptyStateActions').classList.remove('hidden');
+        }
+
+        window.onSharedDatasetUpdated = function(records, meta, sharedEmailDir) {
+            if (sharedEmailDir && (sharedEmailDir.byRfc || sharedEmailDir.byName)) {
+                emailDirectory = {
+                    byRfc: sharedEmailDir.byRfc || {},
+                    byName: sharedEmailDir.byName || {},
+                    stats: sharedEmailDir.stats || {
+                        rowsRead: meta?.correosRowsCount || 0,
+                        linkedDocentes: meta?.correosLinkedDocentes || 0
                     }
+                };
+            }
+
+            rawRecords = records.map(enrichRecord);
+            const linkedCount = computeLinkedDocentesCount(rawRecords, emailDirectory);
+            const rowsRead = emailDirectory.stats?.rowsRead || meta?.correosRowsCount || 0;
+            emailDirectory.stats = { rowsRead, linkedDocentes: linkedCount };
+
+            const noEscCount = rawRecords.filter(x => x.Modalidad === 'No Escolarizada').length;
+            const escCount = rawRecords.length - noEscCount;
+
+            const fileName = (meta && meta.fileName) ? meta.fileName : 'origen.xlsx';
+            const updatedAt = (meta && meta.updatedAt) ? meta.updatedAt : 'Reciente';
+            const periodo = (meta && meta.periodo) ? meta.periodo : (rawRecords[0]?.Periodo_escolar || '—');
+            const evaluacion = (meta && meta.evaluacion) ? meta.evaluacion : (rawRecords[0]?.Evaluacion || 'Corte');
+
+            // Actualizar barra superior
+            document.getElementById('loadedFileName').textContent = `${fileName} (${updatedAt})`;
+            document.getElementById('loadedFileMeta').textContent = `${rawRecords.length} actas • ${linkedCount} docentes con correo`;
+            document.getElementById('periodBadge').textContent = `${periodo} • ${evaluacion}`;
+            document.getElementById('periodBadge').className = 'flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-ipn-guinda text-white';
+            document.getElementById('periodSummaryLabel').textContent = `${periodo} • ${evaluacion} (${updatedAt})`;
+
+            // Actualizar bitácora en pestaña Administración
+            document.getElementById('adminSyncIndicator').textContent = 'Publicado';
+            document.getElementById('adminSyncIndicator').className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800';
+            document.getElementById('metaFileName').textContent = fileName;
+            document.getElementById('metaUpdatedAt').textContent = updatedAt;
+            document.getElementById('metaPeriodoEval').textContent = `${periodo} • ${evaluacion}`;
+            document.getElementById('metaTotalActas').textContent = rawRecords.length.toLocaleString('es-MX');
+            document.getElementById('metaModalidades').textContent = `${escCount} Esc. / ${noEscCount} No Esc.`;
+            document.getElementById('metaCorreosStatus').textContent = `${rowsRead} filas leídas / ${linkedCount} docentes vinculados`;
+
+            document.getElementById('emptyStateScreen').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.remove('hidden');
+
+            populateFilters();
+            expandedDocentes.clear();
+            applyFilters();
+        };
+
+        // ============================================================================
+        // 3. LECTURA, NORMALIZACIÓN Y PUBLICACIÓN DESDE PESTAÑA ADMINISTRACIÓN
+        // ============================================================================
+        function setupAdminDragAndDrop() {
+            const zone = document.getElementById('adminDropZone');
+            if (!zone) return;
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                zone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                 }, false);
             });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                zone.addEventListener(eventName, () => zone.classList.add('drop-zone-active'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                zone.addEventListener(eventName, () => zone.classList.remove('drop-zone-active'), false);
+            });
+
+            zone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files && files.length > 0) {
+                    processAdminUploadFile(files[0]);
+                }
+            }, false);
         }
 
-        function clearLoadedDataset() {
-            rawRecords = [];
-            filteredRecords = [];
-            expandedDocentes.clear();
-
-            if (statusChartInstance) { statusChartInstance.destroy(); statusChartInstance = null; }
-            if (modalityChartInstance) { modalityChartInstance.destroy(); modalityChartInstance = null; }
-            if (comparisonChartInstance) { comparisonChartInstance.destroy(); comparisonChartInstance = null; }
-
-            document.getElementById('loadedFileName').textContent = 'Sin archivo cargado (Modo manual)';
-            document.getElementById('loadedFileMeta').textContent = 'Selecciona o arrastra tu archivo .xlsx, .xls o .csv';
-            document.getElementById('periodBadge').textContent = 'ESPERA';
-            document.getElementById('periodBadge').className = 'flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-slate-200 text-slate-700';
-            document.getElementById('btnClearFile').classList.add('hidden');
-
-            document.getElementById('dashboardContent').classList.add('hidden');
-            document.getElementById('emptyUploadScreen').classList.remove('hidden');
-
-            showToast('Archivo limpiado. Listo para cargar otro Excel o CSV.', 'success');
-        }
-
-        // ============================================================================
-        // 4. LECTURA Y NORMALIZACIÓN DE ARCHIVOS (21 O 17 COLUMNAS)
-        // ============================================================================
         function handleFileUpload(event) {
             const file = event.target.files && event.target.files[0];
             if (file) {
-                processUploadedFile(file);
+                processAdminUploadFile(file);
             }
             event.target.value = '';
         }
@@ -823,19 +1273,26 @@
         function enrichRecord(rec) {
             const secuencia = String(rec.Secuencia || '').trim().toUpperCase();
             const cveMateria = String(rec.Cve_Materia || '').trim().toUpperCase();
-            const carrera = String(rec.Carrera || '').trim().toUpperCase();
-            const carrCode = String(rec.CARR || (carrera ? carrera.charAt(0) : '')).trim().toUpperCase();
+            const rawCarrera = String(rec.Carrera || '').trim().toUpperCase();
+            const carrCode = String(rec.CARR || (rawCarrera ? rawCarrera.charAt(0) : '')).trim().toUpperCase();
+            const cleanCarrera = cleanCarreraPrefix(rawCarrera);
             const semestre = String(rec.SEMESTRE || deriveSemestreFromSecuencia(secuencia)).trim();
             const clave = String(rec.clave || `${secuencia}${cveMateria}`).trim().toUpperCase();
             const jefatura = deriveJefatura(carrCode, semestre, rec.Jefatura);
             const modalidad = detectModalidadFromSecuencia(secuencia);
+            const rfcUpper = String(rec.RFC || '').trim().toUpperCase();
+            const nombreUpper = String(rec.Nombre || '').trim().toUpperCase();
+            const email = String(rec.Email || resolveDocenteEmail(rfcUpper, nombreUpper) || '').trim();
 
             return {
                 ...rec,
+                RFC: rfcUpper,
+                Nombre: nombreUpper,
+                Email: email,
                 Estatus_acta: normalizeEstatus(rec.Estatus_acta),
                 Secuencia: secuencia,
                 Cve_Materia: cveMateria,
-                Carrera: carrera,
+                Carrera: cleanCarrera,
                 CARR: carrCode,
                 SEMESTRE: semestre,
                 clave: clave,
@@ -844,136 +1301,272 @@
             };
         }
 
-        function processUploadedFile(file) {
+        function parseCorreosSheet(workbook) {
+            const byRfc = {};
+            const byName = {};
+            let rowsRead = 0;
+
+            const correosSheetName = workbook.SheetNames.find(
+                name => String(name || '').trim().toUpperCase() === 'CORREOS'
+            );
+            if (!correosSheetName) {
+                return { byRfc, byName, stats: { rowsRead: 0, linkedDocentes: 0 } };
+            }
+
+            const sheet = workbook.Sheets[correosSheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            if (!rows || rows.length < 2) {
+                return { byRfc, byName, stats: { rowsRead: 0, linkedDocentes: 0 } };
+            }
+
+            const emailRegex = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+            const rfcRegex = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{0,3}$/i;
+
+            // Detectar fila de encabezados en las primeras 10 filas
+            let headerRowIndex = 0;
+            let foundHeader = false;
+            for (let i = 0; i < Math.min(10, rows.length); i++) {
+                const normRow = rows[i].map(c =>
+                    String(c || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                );
+                const hasEmailHeader = normRow.some(h => ['correo', 'email', 'e-mail', 'correo electronico', 'correo institucional', 'mail'].some(k => h.includes(k)));
+                const hasIdOrNameHeader = normRow.some(h => ['rfc', 'curp', 'clave', 'id', 'nombre', 'docente', 'profesor'].some(k => h.includes(k)));
+                if (hasEmailHeader || hasIdOrNameHeader) {
+                    headerRowIndex = i;
+                    foundHeader = true;
+                    break;
+                }
+            }
+
+            let colId = -1;
+            let colName = -1;
+            let colEmail = -1;
+
+            if (foundHeader) {
+                const headers = rows[headerRowIndex].map(h =>
+                    String(h || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                );
+                colId = headers.findIndex(h => ['rfc', 'curp', 'clave', 'id'].some(k => h === k || h.includes(k)));
+                colName = headers.findIndex(h => ['nombre completo', 'nombre', 'docente', 'profesor'].some(k => h === k || h.includes(k)));
+                colEmail = headers.findIndex(h => ['correo institucional', 'correo electronico', 'correo', 'e-mail', 'email', 'mail'].some(k => h === k || h.includes(k)));
+            }
+
+            const startRow = foundHeader ? headerRowIndex + 1 : 0;
+
+            for (let r = startRow; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row || row.length === 0) continue;
+
+                let rawEmail = colEmail !== -1 ? String(row[colEmail] || '').trim() : '';
+                if (!emailRegex.test(rawEmail)) {
+                    const fallbackEmailCell = row.find(cell => emailRegex.test(String(cell || '').trim()));
+                    rawEmail = fallbackEmailCell ? String(fallbackEmailCell).trim() : '';
+                }
+                const emailMatch = rawEmail.match(emailRegex);
+                if (!emailMatch) continue;
+                const cleanEmail = emailMatch[0].toLowerCase();
+
+                let rawId = colId !== -1 ? String(row[colId] || '').trim() : '';
+                if (!rawId) {
+                    const fallbackIdCell = row.find(cell => rfcRegex.test(String(cell || '').trim().replace(/\s+/g, '')));
+                    rawId = fallbackIdCell ? String(fallbackIdCell).trim() : '';
+                }
+
+                let rawName = colName !== -1 ? String(row[colName] || '').trim() : '';
+                if (!rawName) {
+                    // Buscar columna de texto que no sea correo ni RFC
+                    const fallbackNameCell = row.find((cell, idx) => {
+                        const val = String(cell || '').trim();
+                        return val.length >= 5 && !emailRegex.test(val) && !rfcRegex.test(val.replace(/\s+/g, '')) && idx !== colId && idx !== colEmail;
+                    });
+                    rawName = fallbackNameCell ? String(fallbackNameCell).trim() : '';
+                }
+
+                const normRfc = normalizeRfcKey(rawId);
+                const normName = normalizePersonName(rawName);
+
+                if (normRfc || normName) {
+                    rowsRead++;
+                    if (normRfc && !byRfc[normRfc]) {
+                        byRfc[normRfc] = cleanEmail;
+                    }
+                    if (normName && !byName[normName]) {
+                        byName[normName] = cleanEmail;
+                    }
+                }
+            }
+
+            return {
+                byRfc,
+                byName,
+                stats: { rowsRead, linkedDocentes: 0 }
+            };
+        }
+
+        function parseWorkbookBundle(arrayBuffer) {
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            // 1. Leer primero la hoja "CORREOS" si existe en el libro
+            const parsedEmailDir = parseCorreosSheet(workbook);
+
+            // 2. Seleccionar la hoja principal de registros (evitando elegir "CORREOS" como hoja de actas)
+            const mainSheetName = workbook.SheetNames.find(
+                name => String(name || '').trim().toUpperCase() !== 'CORREOS'
+            ) || workbook.SheetNames[0];
+
+            const firstSheet = workbook.Sheets[mainSheetName];
+            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+            if (!rows || rows.length < 2) {
+                return { records: [], emailDirectory: parsedEmailDir };
+            }
+
+            let headerRowIndex = 0;
+            for (let i = 0; i < Math.min(10, rows.length); i++) {
+                const rowStr = rows[i].join('|').toUpperCase();
+                if (rowStr.includes('RFC') && (rowStr.includes('ESTATUS') || rowStr.includes('MATERIA'))) {
+                    headerRowIndex = i;
+                    break;
+                }
+            }
+
+            const headers = rows[headerRowIndex].map(h =>
+                String(h).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            );
+
+            const findCol = (exactNames, partialNames, fallbackIdx) => {
+                let idx = headers.findIndex(h => exactNames.includes(h));
+                if (idx === -1 && partialNames.length > 0) {
+                    idx = headers.findIndex(h => partialNames.some(p => h.includes(p)));
+                }
+                return idx !== -1 ? idx : fallbackIdx;
+            };
+
+            const idxMap = {
+                Periodo_escolar: findCol(['periodo_escolar', 'periodo'], ['periodo'], 0),
+                Evaluacion: findCol(['evaluacion'], ['eval'], 1),
+                RFC: findCol(['rfc'], [], 2),
+                Nombre: findCol(['nombre'], ['docente'], 3),
+                Fecha_aplicacion: findCol(['fecha aplicacion', 'fecha_aplicacion'], ['aplicacion'], 4),
+                Fecha_limite: findCol(['fecha limite saes', 'fecha_limite'], ['limite'], 5),
+                Estatus_acta: findCol(['estatus_acta', 'estatus'], ['estatus'], 6),
+                Porcentaje_eval: findCol(['porcentaje_eval', 'porcentaje'], ['porcentaje'], 7),
+                Carrera: findCol(['carrera'], ['programa'], 8),
+                Plan_estud: findCol(['plan_estud', 'plan'], ['plan'], 9),
+                Especialidad: findCol(['especialidad'], [], 10),
+                Secuencia: findCol(['secuencia'], ['grupo'], 11),
+                Cve_Materia: findCol(['cve_materia'], [], 12),
+                Materia: findCol(['materia'], ['asignatura'], 13),
+                Inscritos: findCol(['inscritos'], [], 14),
+                Calificados: findCol(['calificados'], [], 15),
+                Pendientes: findCol(['pendientes'], [], 16),
+                clave: findCol(['clave'], [], 17),
+                SEMESTRE: findCol(['semestre'], [], 18),
+                CARR: findCol(['carr'], [], 19),
+                Jefatura: findCol(['jefatura'], [], 20)
+            };
+
+            const parsed = [];
+            for (let r = headerRowIndex + 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row || row.length === 0) continue;
+
+                const firstCell = String(row[0] || '').trim();
+                const rfcVal = String(row[idxMap.RFC] || '').trim().toUpperCase();
+                const matVal = String(row[idxMap.Materia] || '').trim().toUpperCase();
+                const nomVal = String(row[idxMap.Nombre] || '').trim().toUpperCase();
+
+                if (firstCell.includes('©') || firstCell.toUpperCase().includes('SAES IPN')) continue;
+                if (!rfcVal && !matVal) continue;
+
+                const inscritos = parseInt(row[idxMap.Inscritos], 10) || 0;
+                const calificados = parseInt(row[idxMap.Calificados], 10) || 0;
+                let pendientes = parseInt(row[idxMap.Pendientes], 10);
+                if (isNaN(pendientes)) {
+                    pendientes = Math.max(0, inscritos - calificados);
+                }
+
+                const matchedEmail =
+                    parsedEmailDir.byRfc[normalizeRfcKey(rfcVal)] ||
+                    parsedEmailDir.byName[normalizePersonName(nomVal)] ||
+                    '';
+
+                parsed.push(enrichRecord({
+                    Periodo_escolar: firstCell,
+                    Evaluacion: String(row[idxMap.Evaluacion] || '').trim(),
+                    RFC: rfcVal,
+                    Nombre: nomVal,
+                    Email: matchedEmail,
+                    Fecha_aplicacion: formatExcelDate(row[idxMap.Fecha_aplicacion]),
+                    Fecha_limite: formatExcelDate(row[idxMap.Fecha_limite]),
+                    Estatus_acta: row[idxMap.Estatus_acta],
+                    Porcentaje_eval: parseFloat(row[idxMap.Porcentaje_eval]) || 100,
+                    Carrera: row[idxMap.Carrera],
+                    Plan_estud: String(row[idxMap.Plan_estud] || '').trim(),
+                    Especialidad: String(row[idxMap.Especialidad] || '').trim(),
+                    Secuencia: row[idxMap.Secuencia],
+                    Cve_Materia: row[idxMap.Cve_Materia],
+                    Materia: matVal,
+                    Inscritos: inscritos,
+                    Calificados: calificados,
+                    Pendientes: pendientes,
+                    clave: row[idxMap.clave],
+                    SEMESTRE: row[idxMap.SEMESTRE],
+                    CARR: row[idxMap.CARR],
+                    Jefatura: row[idxMap.Jefatura]
+                }));
+            }
+
+            parsedEmailDir.stats.linkedDocentes = computeLinkedDocentesCount(parsed, parsedEmailDir);
+            return { records: parsed, emailDirectory: parsedEmailDir };
+        }
+
+        function processAdminUploadFile(file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+                    window.updateUploadProgress(15, `Leyendo archivo "${file.name}" y hoja "CORREOS"...`);
+                    const bundle = parseWorkbookBundle(e.target.result);
 
-                    if (!rows || rows.length < 2) {
-                        showToast('El archivo no contiene registros suficientes.', 'error');
-                        return;
-                    }
-
-                    let headerRowIndex = 0;
-                    for (let i = 0; i < Math.min(10, rows.length); i++) {
-                        const rowStr = rows[i].join('|').toUpperCase();
-                        if (rowStr.includes('RFC') && (rowStr.includes('ESTATUS') || rowStr.includes('MATERIA'))) {
-                            headerRowIndex = i;
-                            break;
-                        }
-                    }
-
-                    const headers = rows[headerRowIndex].map(h =>
-                        String(h).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                    );
-
-                    const findCol = (exactNames, partialNames, fallbackIdx) => {
-                        let idx = headers.findIndex(h => exactNames.includes(h));
-                        if (idx === -1 && partialNames.length > 0) {
-                            idx = headers.findIndex(h => partialNames.some(p => h.includes(p)));
-                        }
-                        return idx !== -1 ? idx : fallbackIdx;
-                    };
-
-                    const idxMap = {
-                        Periodo_escolar: findCol(['periodo_escolar', 'periodo'], ['periodo'], 0),
-                        Evaluacion: findCol(['evaluacion'], ['eval'], 1),
-                        RFC: findCol(['rfc'], [], 2),
-                        Nombre: findCol(['nombre'], ['docente'], 3),
-                        Fecha_aplicacion: findCol(['fecha aplicacion', 'fecha_aplicacion'], ['aplicacion'], 4),
-                        Fecha_limite: findCol(['fecha limite saes', 'fecha_limite'], ['limite'], 5),
-                        Estatus_acta: findCol(['estatus_acta', 'estatus'], ['estatus'], 6),
-                        Porcentaje_eval: findCol(['porcentaje_eval', 'porcentaje'], ['porcentaje'], 7),
-                        Carrera: findCol(['carrera'], ['programa'], 8),
-                        Plan_estud: findCol(['plan_estud', 'plan'], ['plan'], 9),
-                        Especialidad: findCol(['especialidad'], [], 10),
-                        Secuencia: findCol(['secuencia'], ['grupo'], 11),
-                        Cve_Materia: findCol(['cve_materia'], [], 12),
-                        Materia: findCol(['materia'], ['asignatura'], 13),
-                        Inscritos: findCol(['inscritos'], [], 14),
-                        Calificados: findCol(['calificados'], [], 15),
-                        Pendientes: findCol(['pendientes'], [], 16),
-                        clave: findCol(['clave'], [], 17),
-                        SEMESTRE: findCol(['semestre'], [], 18),
-                        CARR: findCol(['carr'], [], 19),
-                        Jefatura: findCol(['jefatura'], [], 20)
-                    };
-
-                    const parsed = [];
-                    for (let r = headerRowIndex + 1; r < rows.length; r++) {
-                        const row = rows[r];
-                        if (!row || row.length === 0) continue;
-
-                        const firstCell = String(row[0] || '').trim();
-                        const rfcVal = String(row[idxMap.RFC] || '').trim();
-                        const matVal = String(row[idxMap.Materia] || '').trim();
-
-                        // Omitir pie de página institucional de SAES o filas vacías
-                        if (firstCell.includes('©') || firstCell.toUpperCase().includes('SAES IPN')) continue;
-                        if (!rfcVal && !matVal) continue;
-
-                        const inscritos = parseInt(row[idxMap.Inscritos], 10) || 0;
-                        const calificados = parseInt(row[idxMap.Calificados], 10) || 0;
-                        let pendientes = parseInt(row[idxMap.Pendientes], 10);
-                        if (isNaN(pendientes)) {
-                            pendientes = Math.max(0, inscritos - calificados);
-                        }
-
-                        parsed.push(enrichRecord({
-                            Periodo_escolar: firstCell,
-                            Evaluacion: String(row[idxMap.Evaluacion] || '').trim(),
-                            RFC: rfcVal.toUpperCase(),
-                            Nombre: String(row[idxMap.Nombre] || '').trim().toUpperCase(),
-                            Fecha_aplicacion: formatExcelDate(row[idxMap.Fecha_aplicacion]),
-                            Fecha_limite: formatExcelDate(row[idxMap.Fecha_limite]),
-                            Estatus_acta: row[idxMap.Estatus_acta],
-                            Porcentaje_eval: parseFloat(row[idxMap.Porcentaje_eval]) || 100,
-                            Carrera: row[idxMap.Carrera],
-                            Plan_estud: String(row[idxMap.Plan_estud] || '').trim(),
-                            Especialidad: String(row[idxMap.Especialidad] || '').trim(),
-                            Secuencia: row[idxMap.Secuencia],
-                            Cve_Materia: row[idxMap.Cve_Materia],
-                            Materia: String(row[idxMap.Materia] || '').trim().toUpperCase(),
-                            Inscritos: inscritos,
-                            Calificados: calificados,
-                            Pendientes: pendientes,
-                            clave: row[idxMap.clave],
-                            SEMESTRE: row[idxMap.SEMESTRE],
-                            CARR: row[idxMap.CARR],
-                            Jefatura: row[idxMap.Jefatura]
-                        }));
-                    }
-
-                    if (parsed.length === 0) {
+                    if (bundle.records.length === 0) {
+                        document.getElementById('uploadProgressBox').classList.add('hidden');
                         showToast('No se encontraron registros válidos en el archivo.', 'error');
                         return;
                     }
 
-                    rawRecords = parsed;
-                    const noEscCount = rawRecords.filter(x => x.Modalidad === 'No Escolarizada').length;
+                    const currentPin = document.getElementById('adminPinInput').value;
+                    const newPin = document.getElementById('newAdminPinInput').value;
 
-                    document.getElementById('loadedFileName').textContent = file.name;
-                    document.getElementById('loadedFileMeta').textContent = `${rawRecords.length} actas (${rawRecords.length - noEscCount} Esc. / ${noEscCount} No Esc. [X])`;
-                    document.getElementById('periodBadge').textContent = `${rawRecords[0].Periodo_escolar || 'SAES'} • ${rawRecords[0].Evaluacion || 'Corte'}`;
-                    document.getElementById('periodBadge').className = 'flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-ipn-guinda text-white';
-                    document.getElementById('periodSummaryLabel').textContent = `${rawRecords[0].Periodo_escolar || '—'} • ${rawRecords[0].Evaluacion || '—'}`;
-                    document.getElementById('btnClearFile').classList.remove('hidden');
+                    await window.sharedStore.saveDataset(
+                        bundle.records,
+                        file.name,
+                        currentPin,
+                        newPin,
+                        bundle.emailDirectory,
+                        bundle.emailDirectory.stats
+                    );
 
-                    document.getElementById('emptyUploadScreen').classList.add('hidden');
-                    document.getElementById('dashboardContent').classList.remove('hidden');
+                    document.getElementById('adminPinInput').value = '';
+                    document.getElementById('newAdminPinInput').value = '';
+                    setTimeout(() => {
+                        document.getElementById('uploadProgressBox').classList.add('hidden');
+                    }, 1500);
 
-                    populateFilters();
-                    expandedDocentes.clear();
-                    applyFilters();
+                    const emailSummaryMsg = bundle.emailDirectory.stats.rowsRead > 0
+                        ? ` y ${bundle.emailDirectory.stats.linkedDocentes} docentes vinculados con correo.`
+                        : ' (sin registros en hoja "CORREOS").';
 
-                    showToast(`Cargado "${file.name}" (${rawRecords.length} actas).`, 'success');
+                    showToast(`Corte "${file.name}" publicado (${bundle.records.length} actas${emailSummaryMsg})`, 'success');
+                    switchMainSection('dashboard');
                 } catch (err) {
-                    console.error(err);
-                    showToast('Error al procesar el archivo. Verifica que sea un .xlsx, .xls o .csv válido.', 'error');
+                    document.getElementById('uploadProgressBox').classList.add('hidden');
+                    if (err && err.message === 'PIN_INVALIDO') {
+                        showToast('PIN de administrador incorrecto. No se actualizó el archivo.', 'error');
+                    } else {
+                        console.error(err);
+                        showToast('Error al procesar o publicar el archivo.', 'error');
+                    }
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -997,16 +1590,11 @@
             ];
 
             const jefSelect = document.getElementById('jefaturaSelector');
-            jefSelect.innerHTML = `<option value="ALL">🌐 TODAS LAS JEFATURAS — Vista Global (${rawRecords.length} actas)</option>` +
+            jefSelect.innerHTML = `<option value="ALL">TODAS LAS JEFATURAS — Vista Global (${rawRecords.length} actas)</option>` +
                 orderedJefs.map(j => {
                     const c = rawRecords.filter(r => r.Jefatura === j).length;
                     return `<option value="${j}">${j} (${c})</option>`;
                 }).join('');
-
-            const carrSelect = document.getElementById('filterCarrera');
-            const carreras = [...new Set(rawRecords.map(r => r.Carrera).filter(Boolean))].sort();
-            carrSelect.innerHTML = '<option value="ALL">Carrera: Todas</option>' +
-                carreras.map(c => `<option value="${c}">${c}</option>`).join('');
 
             const planSelect = document.getElementById('filterPlan');
             const planes = [...new Set(rawRecords.map(r => r.Plan_estud).filter(Boolean))].sort();
@@ -1015,12 +1603,12 @@
 
             const semSelect = document.getElementById('filterSemestre');
             const semestres = [...new Set(rawRecords.map(r => r.SEMESTRE).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
-            semSelect.innerHTML = '<option value="ALL">Sem.</option>' +
-                semestres.map(s => `<option value="${s}">${s}.º</option>`).join('');
+            semSelect.innerHTML = '<option value="ALL">Semestre: Todos</option>' +
+                semestres.map(s => `<option value="${s}">${s}.º Semestre</option>`).join('');
         }
 
         // ============================================================================
-        // 5. FILTRADO, KPIs Y GRÁFICAS
+        // 4. FILTRADO, KPIs Y GRÁFICAS
         // ============================================================================
         function applyFilters() {
             if (rawRecords.length === 0) return;
@@ -1028,7 +1616,6 @@
             const selectedJef = document.getElementById('jefaturaSelector').value;
             const selectedMod = document.getElementById('modalitySelector').value;
             const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
-            const carreraFilter = document.getElementById('filterCarrera').value;
             const planFilter = document.getElementById('filterPlan').value;
             const semFilter = document.getElementById('filterSemestre').value;
             const statusFilter = document.getElementById('filterStatus').value;
@@ -1038,7 +1625,6 @@
 
             let activeCount = 0;
             if (searchQuery) activeCount++;
-            if (carreraFilter !== 'ALL') activeCount++;
             if (planFilter !== 'ALL') activeCount++;
             if (semFilter !== 'ALL') activeCount++;
             if (statusFilter !== 'ALL') activeCount++;
@@ -1055,7 +1641,6 @@
             filteredRecords = rawRecords.filter(r => {
                 if (selectedJef !== 'ALL' && r.Jefatura !== selectedJef) return false;
                 if (selectedMod !== 'ALL' && r.Modalidad !== selectedMod) return false;
-                if (carreraFilter !== 'ALL' && r.Carrera !== carreraFilter) return false;
                 if (planFilter !== 'ALL' && r.Plan_estud !== planFilter) return false;
                 if (semFilter !== 'ALL' && r.SEMESTRE !== semFilter) return false;
 
@@ -1073,7 +1658,7 @@
                 }
 
                 if (searchQuery) {
-                    const hay = `${r.Nombre} ${r.RFC} ${r.Secuencia} ${r.clave} ${r.Cve_Materia} ${r.Materia} ${r.Jefatura} ${r.Carrera}`.toLowerCase();
+                    const hay = `${r.Nombre} ${r.RFC} ${r.Email || ''} ${r.Secuencia} ${r.clave} ${r.Cve_Materia} ${r.Materia} ${r.Jefatura}`.toLowerCase();
                     if (!hay.includes(searchQuery)) return false;
                 }
 
@@ -1101,7 +1686,7 @@
             }
 
             if (selectedMod === 'No Escolarizada') {
-                badgeEl.innerHTML = `<i class="fa-solid fa-globe mr-1"></i> No Escolarizada (3.er car. 'X')`;
+                badgeEl.innerHTML = `<i class="fa-solid fa-globe mr-1"></i> No Escolarizada`;
                 badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200';
             } else if (selectedMod === 'Escolarizada') {
                 badgeEl.innerHTML = `<i class="fa-solid fa-school mr-1"></i> Escolarizada`;
@@ -1132,7 +1717,6 @@
 
         function resetAllFilters() {
             document.getElementById('searchInput').value = '';
-            document.getElementById('filterCarrera').value = 'ALL';
             document.getElementById('filterPlan').value = 'ALL';
             document.getElementById('filterSemestre').value = 'ALL';
             document.getElementById('filterStatus').value = 'ALL';
@@ -1173,7 +1757,7 @@
             docentesMap.forEach(hasPend => { if (hasPend) docentesPend++; });
 
             document.getElementById('kpiTotalActas').textContent = totalActas.toLocaleString('es-MX');
-            document.getElementById('kpiTotalActasSub').textContent = `${escCount} Esc. • ${noEscCount} No Esc. [X]`;
+            document.getElementById('kpiTotalActasSub').textContent = `${escCount} Escolarizada • ${noEscCount} No Escolarizada`;
             document.getElementById('kpiAvancePct').textContent = `${pct}%`;
             document.getElementById('kpiAvanceBar').style.width = `${Math.min(100, parseFloat(pct))}%`;
             document.getElementById('kpiAvanceSub').textContent = `${totalCalificados.toLocaleString('es-MX')} de ${totalInscritos.toLocaleString('es-MX')} inscritos`;
@@ -1258,7 +1842,7 @@
             modalityChartInstance = new Chart(document.getElementById('modalityChart').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: ['Escolarizada', "No Esc. ['X']"],
+                    labels: ['Escolarizada', 'No Escolarizada'],
                     datasets: [
                         { label: 'Conf.', data: [modStats['Escolarizada'].conf, modStats['No Escolarizada'].conf], backgroundColor: '#10B981', borderRadius: 3 },
                         { label: 'Sin Conf.', data: [modStats['Escolarizada'].noConf, modStats['No Escolarizada'].noConf], backgroundColor: '#F59E0B', borderRadius: 3 },
@@ -1320,7 +1904,7 @@
         }
 
         // ============================================================================
-        // 6. VISTAS POR DOCENTE Y LISTADO DE ACTAS
+        // 5. VISTAS POR DOCENTE Y LISTADO DE ACTAS
         // ============================================================================
         function switchTab(tab) {
             const isDoc = tab === 'docentes';
@@ -1335,10 +1919,10 @@
             document.getElementById('docentesTabControls').classList.toggle('hidden', !isDoc);
         }
 
-        function getModalityBadgeHTML(modalidad, secuencia) {
+        function getModalityBadgeHTML(modalidad) {
             if (modalidad === 'No Escolarizada') {
-                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200" title="3.er carácter 'X' en ${secuencia}">
-                    <i class="fa-solid fa-laptop text-indigo-600"></i> No Esc. [X]
+                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                    <i class="fa-solid fa-laptop text-indigo-600"></i> No Escolarizada
                 </span>`;
             }
             return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
@@ -1381,12 +1965,16 @@
                 const key = r.RFC || r.Nombre;
                 if (!map.has(key)) {
                     map.set(key, {
-                        RFC: r.RFC, Nombre: r.Nombre, actas: [],
+                        RFC: r.RFC,
+                        Nombre: r.Nombre,
+                        Email: r.Email || resolveDocenteEmail(r.RFC, r.Nombre) || '',
+                        actas: [],
                         confirmadas: 0, sinConfirmar: 0, sinRegistro: 0, rehabilitadas: 0,
                         escCount: 0, noEscCount: 0, inscritos: 0, calificados: 0, pendientes: 0
                     });
                 }
                 const d = map.get(key);
+                if (!d.Email && r.Email) d.Email = r.Email;
                 d.actas.push(r);
                 d.inscritos += r.Inscritos;
                 d.calificados += r.Calificados;
@@ -1399,6 +1987,50 @@
                 else d.sinRegistro++;
             });
             return Array.from(map.values());
+        }
+
+        function copySingleEmail(email) {
+            if (!email) return;
+            copyTextToClipboard(email, `Correo copiado: ${email}`);
+        }
+
+        function copyBulkPendingEmails(separator) {
+            const docentes = groupByDocente();
+            const pendingEmails = [];
+            const seen = new Set();
+
+            docentes.forEach(doc => {
+                const hasPending = (doc.sinConfirmar + doc.sinRegistro + doc.rehabilitadas) > 0 || doc.pendientes > 0;
+                if (hasPending && doc.Email && !seen.has(doc.Email)) {
+                    seen.add(doc.Email);
+                    pendingEmails.push(doc.Email);
+                }
+            });
+
+            if (pendingEmails.length === 0) {
+                showToast('No hay correos vinculados para docentes con pendientes en esta vista.', 'error');
+                return;
+            }
+
+            const joined = pendingEmails.join(separator);
+            copyTextToClipboard(joined, `${pendingEmails.length} correo(s) copiados para envío masivo.`);
+        }
+
+        function copyTextToClipboard(text, successMsg) {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            tempInput.style.position = 'fixed';
+            tempInput.style.opacity = '0';
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                showToast(successMsg || 'Copiado al portapapeles.', 'success');
+            } catch (e) {
+                showToast('No se pudo copiar automáticamente.', 'error');
+            }
+            document.body.removeChild(tempInput);
         }
 
         function renderDocentesView() {
@@ -1440,6 +2072,18 @@
                     barColor = 'bg-amber-500';
                 }
 
+                const emailHtml = doc.Email
+                    ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 text-[11px] font-medium" onclick="event.stopPropagation()">
+                        <i class="fa-regular fa-envelope text-sky-600"></i>
+                        <span class="font-mono select-all">${doc.Email}</span>
+                        <button type="button" onclick="copySingleEmail('${doc.Email}')" class="ml-0.5 text-sky-700 hover:text-ipn-guinda px-1 rounded hover:bg-sky-100 transition cursor-pointer" title="Copiar correo electrónico">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </span>`
+                    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-400 border border-slate-200/80 text-[11px]">
+                        <i class="fa-regular fa-envelope-open"></i> Sin correo en hoja CORREOS
+                    </span>`;
+
                 return `
                 <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
                     <div class="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/80 transition" onclick="toggleDocente('${doc.RFC}')">
@@ -1452,6 +2096,9 @@
                                     <h4 class="text-sm font-extrabold text-slate-900 truncate">${doc.Nombre}</h4>
                                     <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[11px] font-semibold border border-slate-200">${doc.RFC}</span>
                                     ${badge}
+                                </div>
+                                <div class="mt-1 flex flex-wrap items-center gap-2">
+                                    ${emailHtml}
                                 </div>
                                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1.5">
                                     <span><strong class="text-slate-700">${doc.actas.length}</strong> actas (${doc.escCount} Esc. / ${doc.noEscCount} No Esc.)</span>
@@ -1494,10 +2141,10 @@
                                     <th class="px-3 py-2 text-left">Secuencia / Clave</th>
                                     <th class="px-3 py-2 text-left">Modalidad</th>
                                     <th class="px-3 py-2 text-left">Materia</th>
-                                    <th class="px-3 py-2 text-left">Jefatura / Carrera</th>
+                                    <th class="px-3 py-2 text-left">Jefatura</th>
                                     <th class="px-3 py-2 text-center">Sem.</th>
                                     <th class="px-3 py-2 text-left">Fecha Límite SAES</th>
-                                    <th class="px-3 py-2 text-left">Estatus_acta</th>
+                                    <th class="px-3 py-2 text-left">Estatus Acta</th>
                                     <th class="px-3 py-2 text-right">Insc. / Cal. / Pend.</th>
                                 </tr>
                             </thead>
@@ -1510,14 +2157,13 @@
                                             <div class="font-mono font-bold text-ipn-guinda">${a.Secuencia}</div>
                                             <div class="text-[10px] font-mono text-slate-500">${a.clave}</div>
                                         </td>
-                                        <td class="px-3 py-2.5 whitespace-nowrap">${getModalityBadgeHTML(a.Modalidad, a.Secuencia)}</td>
+                                        <td class="px-3 py-2.5 whitespace-nowrap">${getModalityBadgeHTML(a.Modalidad)}</td>
                                         <td class="px-3 py-2.5">
                                             <div class="font-bold text-slate-800">${a.Materia}</div>
                                             <div class="text-[11px] text-slate-500 font-mono">Cve: ${a.Cve_Materia} • Plan: ${a.Plan_estud}</div>
                                         </td>
                                         <td class="px-3 py-2.5">
                                             <div class="font-semibold text-slate-700">${a.Jefatura}</div>
-                                            <div class="text-[11px] text-slate-500">${a.Carrera}</div>
                                         </td>
                                         <td class="px-3 py-2.5 text-center font-bold text-slate-700">${a.SEMESTRE}.º</td>
                                         <td class="px-3 py-2.5 whitespace-nowrap">${getDeadlineHTML(a.Fecha_limite, isConf)}</td>
@@ -1591,11 +2237,10 @@
                 <tr class="hover:bg-slate-50 transition">
                     <td class="px-3 py-3 max-w-[190px]">
                         <div class="font-bold text-slate-800 truncate">${r.Jefatura}</div>
-                        <div class="text-[11px] text-slate-500 truncate">${r.Carrera}</div>
                     </td>
                     <td class="px-3 py-3 whitespace-nowrap">
                         <div class="font-mono font-bold text-ipn-guinda">${r.Secuencia}</div>
-                        <div class="mt-0.5">${getModalityBadgeHTML(r.Modalidad, r.Secuencia)}</div>
+                        <div class="mt-0.5">${getModalityBadgeHTML(r.Modalidad)}</div>
                     </td>
                     <td class="px-3 py-3 text-center font-bold text-slate-700">${r.SEMESTRE}.º</td>
                     <td class="px-3 py-3">
@@ -1605,6 +2250,7 @@
                     <td class="px-3 py-3">
                         <div class="font-semibold text-slate-800">${r.Nombre}</div>
                         <div class="text-[11px] font-mono text-slate-500">${r.RFC}</div>
+                        ${r.Email ? `<div class="text-[11px] font-mono text-sky-700 truncate max-w-[200px]" title="${r.Email}">${r.Email}</div>` : ''}
                     </td>
                     <td class="px-3 py-3 whitespace-nowrap">${getDeadlineHTML(r.Fecha_limite, isConf)}</td>
                     <td class="px-3 py-3 whitespace-nowrap">${getStatusBadgeHTML(r.Estatus_acta)}</td>
@@ -1629,6 +2275,7 @@
             if (!actas.length) return;
 
             const nombre = actas[0].Nombre;
+            const docenteEmail = actas[0].Email || resolveDocenteEmail(rfc, nombre) || '';
             const periodo = actas[0].Periodo_escolar || '—';
             const evalName = actas[0].Evaluacion || 'Evaluación';
             const jefSel = document.getElementById('jefaturaSelector').value;
@@ -1641,26 +2288,54 @@
             let subject = '';
             let body = '';
             if (pendActas.length > 0) {
-                subject = `RECORDATORIO: Cierre y Confirmación de Actas SAES (${evalName} - ${periodo})`;
+                subject = `Recordatorio de captura y confirmación de actas SAES - ${evalName} ${periodo}`;
                 const detalle = pendActas.map((a, i) =>
                     `${i + 1}. Secuencia: ${a.Secuencia} (${a.Modalidad}) | Clave: ${a.clave} - ${a.Materia} (${a.SEMESTRE}.º Sem.)\n   Estatus: ${a.Estatus_acta} | Alumnos: ${a.Calificados}/${a.Inscritos} (${a.Pendientes} pend.) | Límite: ${a.Fecha_limite}`
                 ).join('\n\n');
                 body = `Estimado(a) Prof(a). ${nombre}\nRFC: ${rfc}\nPresente.\n\nPor medio de la presente le solicitamos atentamente concluir y CONFIRMAR en SAES (${evalName}, periodo ${periodo}) las siguientes actas:\n\n${detalle}\n\nAtentamente,\n"La Técnica al Servicio de la Patria"\n${remitente}\nIPN`;
             } else {
-                subject = `CUMPLIMIENTO DE CAPTURA SAES (${evalName} - ${periodo})`;
+                subject = `Cumplimiento de captura SAES - ${evalName} ${periodo}`;
                 body = `Estimado(a) Prof(a). ${nombre}\nRFC: ${rfc}\nPresente.\n\nLe informamos que la totalidad de sus actas (${actas.length}) en la vista actual se encuentran capturadas y confirmadas.\n\nAtentamente,\n"La Técnica al Servicio de la Patria"\n${remitente}\nIPN`;
             }
 
+            const emailSourceBadge = document.getElementById('reminderEmailSourceBadge');
+            if (docenteEmail) {
+                emailSourceBadge.textContent = 'Encontrado en hoja CORREOS';
+                emailSourceBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200';
+            } else {
+                emailSourceBadge.textContent = 'Sin correo en hoja CORREOS (captura manual)';
+                emailSourceBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200';
+            }
+
             document.getElementById('modalDocenteSubtitle').textContent = `${nombre} (${rfc}) — ${pendActas.length} acta(s) por atender`;
+            document.getElementById('reminderToEmail').value = docenteEmail;
             document.getElementById('reminderSubject').value = subject;
             document.getElementById('reminderBody').value = body;
-            document.getElementById('mailtoLink').href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            updateReminderMailLinks();
             document.getElementById('copyFeedback').classList.add('hidden');
             document.getElementById('reminderModal').classList.remove('hidden');
         }
 
+        function updateReminderMailLinks() {
+            const to = encodeURIComponent(document.getElementById('reminderToEmail').value.trim());
+            const subject = encodeURIComponent(document.getElementById('reminderSubject').value);
+            const body = encodeURIComponent(document.getElementById('reminderBody').value);
+
+            document.getElementById('mailtoLink').href = `mailto:${to}?subject=${subject}&body=${body}`;
+            document.getElementById('gmailLink').href = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`;
+        }
+
         function closeReminderModal() {
             document.getElementById('reminderModal').classList.add('hidden');
+        }
+
+        function copyReminderEmailOnly() {
+            const emailVal = document.getElementById('reminderToEmail').value.trim();
+            if (!emailVal) {
+                showToast('No hay dirección de correo capturada para copiar.', 'error');
+                return;
+            }
+            copyTextToClipboard(emailVal, `Correo copiado: ${emailVal}`);
         }
 
         function copyReminderText() {
@@ -1670,7 +2345,7 @@
             try {
                 document.execCommand('copy');
                 document.getElementById('copyFeedback').classList.remove('hidden');
-                showToast('Texto copiado al portapapeles.', 'success');
+                showToast('Mensaje completo copiado al portapapeles.', 'success');
             } catch (e) {
                 showToast('Selecciona el texto y copia con Ctrl+C.', 'error');
             }
@@ -1744,28 +2419,52 @@
                 'CARR': 'C',
                 'Jefatura': 'CONTADOR PÚBLICO'
             }];
+            const sampleCorreos = [{
+                'RFC': 'AAAC680829',
+                'Nombre': 'ARAIZA AGUILAR JOSE CARMEN',
+                'Correo': 'jaraizaa@ipn.mx'
+            }];
             const ws = XLSX.utils.json_to_sheet(sample);
+            const wsCorreos = XLSX.utils.json_to_sheet(sampleCorreos);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Plantilla_21_Cols');
-            XLSX.writeFile(wb, 'Plantilla_SAES_21_Columnas.xlsx');
-            showToast('Plantilla de 21 columnas descargada.', 'success');
+            XLSX.utils.book_append_sheet(wb, ws, 'Avance_SAES');
+            XLSX.utils.book_append_sheet(wb, wsCorreos, 'CORREOS');
+            XLSX.writeFile(wb, 'Plantilla_SAES_con_CORREOS.xlsx');
+            showToast('Plantilla con hoja "CORREOS" descargada.', 'success');
         }
 
-        let toastTimer = null;
+        function exportBackupJson() {
+            if (!rawRecords.length) {
+                showToast('No hay registros vigentes para respaldar.', 'error');
+                return;
+            }
+            const blob = new Blob([JSON.stringify(rawRecords, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Respaldo_SAES_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Respaldo JSON descargado.', 'success');
+        }
+
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toastNotification');
             const icon = document.getElementById('toastIcon');
-            document.getElementById('toastMessage').textContent = message;
+            const msg = document.getElementById('toastMessage');
+            msg.textContent = message;
             icon.className = type === 'error'
                 ? 'fa-solid fa-circle-exclamation text-rose-400 text-base'
                 : 'fa-solid fa-circle-check text-emerald-400 text-base';
             toast.classList.remove('hidden');
-            requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
-            if (toastTimer) clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => {
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
                 toast.classList.add('translate-y-2', 'opacity-0');
                 setTimeout(() => toast.classList.add('hidden'), 300);
-            }, 3200);
+            }, 3500);
         }
     </script>
 </body>
