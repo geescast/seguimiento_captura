@@ -601,17 +601,18 @@
     <span id="toastText">Listo</span>
   </div>
 
-  <!-- LÓGICA DE LA PLATAFORMA + SINCRONIZACIÓN FIREBASE CON RESPALDO SEGURO -->
+  <!-- LÓGICA DE LA PLATAFORMA + SINCRONIZACIÓN FIREBASE POR BLOQUES -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     let db = null;
     let auth = null;
     let firebaseReady = false;
     let cloudResolved = false;
     const appId = 'esca-saes-monitor';
+    const CHUNK_SIZE = 200;
 
     const firebaseConfig = {
       apiKey: "AIzaSyBcN45UVebP5PD8U-vobYOl4hqYfuRtusw",
@@ -629,6 +630,10 @@
         window.loadLocalFallback();
       }
     }, 4000);
+
+    function getChunksCollectionRef() {
+      return collection(db, 'artifacts', appId, 'public', 'data', 'saes_corte_chunks');
+    }
 
     async function initCloudSync() {
       try {
@@ -668,7 +673,8 @@
 
     function subscribeToSharedDataset() {
       const metaRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte', 'meta');
-      const payloadRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte', 'payload');
+      const emailsRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte', 'emails');
+      const legacyPayloadRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte', 'payload');
 
       onSnapshot(metaRef, async (metaSnap) => {
         cloudResolved = true;
@@ -681,16 +687,38 @@
         }
         const meta = metaSnap.data();
         try {
-          const payloadSnap = await getDoc(payloadRef);
-          if (payloadSnap.exists()) {
-            const payload = payloadSnap.data();
-            const rows = JSON.parse(payload.rowsJson || '[]');
-            const emailMap = JSON.parse(payload.emailMapJson || '{}');
-            window.applyLoadedDataset(rows, emailMap, meta);
-            updateSyncBadge('Sincronizado en línea', 'emerald');
+          let emailMap = {};
+          const emailsSnap = await getDoc(emailsRef);
+          if (emailsSnap.exists() && emailsSnap.data().emailMapJson) {
+            emailMap = JSON.parse(emailsSnap.data().emailMapJson || '{}');
           }
+
+          let rows = [];
+          const chunksSnap = await getDocs(getChunksCollectionRef());
+          if (!chunksSnap.empty) {
+            const orderedChunks = chunksSnap.docs
+              .map(d => ({ idx: Number(d.data().index ?? d.id), rowsJson: d.data().rowsJson || '[]' }))
+              .sort((a, b) => a.idx - b.idx);
+
+            for (const ch of orderedChunks) {
+              const part = JSON.parse(ch.rowsJson);
+              if (Array.isArray(part)) rows = rows.concat(part);
+            }
+          } else {
+            const legacySnap = await getDoc(legacyPayloadRef);
+            if (legacySnap.exists()) {
+              const payload = legacySnap.data();
+              rows = JSON.parse(payload.rowsJson || '[]');
+              if (!Object.keys(emailMap).length && payload.emailMapJson) {
+                emailMap = JSON.parse(payload.emailMapJson || '{}');
+              }
+            }
+          }
+
+          window.applyLoadedDataset(rows, emailMap, meta);
+          updateSyncBadge('Sincronizado en línea', 'emerald');
         } catch (e) {
-          console.error('Error leyendo payload compartido:', e);
+          console.error('Error leyendo corte compartido por bloques:', e);
           updateSyncBadge('Error de lectura', 'rose');
           window.loadLocalFallback();
         }
@@ -714,7 +742,7 @@
       }
 
       const metaRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte', 'meta');
-      const payloadRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte', 'payload');
+      const emailsRef = doc(db, 'artifacts', appId, 'public', 'data', 'saes_corte', 'emails');
 
       const currentMetaSnap = await getDoc(metaRef);
       if (currentMetaSnap.exists()) {
@@ -725,12 +753,36 @@
       }
 
       const finalPin = pinInput || (currentMetaSnap.exists() ? (currentMetaSnap.data().adminPin || '') : '');
-      const fullMeta = { ...meta, adminPin: finalPin };
+      const chunks = [];
+      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        chunks.push(rows.slice(i, i + CHUNK_SIZE));
+      }
 
-      await setDoc(payloadRef, {
-        rowsJson: JSON.stringify(rows),
+      const chunksCol = getChunksCollectionRef();
+      const existingChunksSnap = await getDocs(chunksCol);
+      for (const oldDoc of existingChunksSnap.docs) {
+        const docNum = Number(oldDoc.id);
+        if (Number.isNaN(docNum) || docNum >= chunks.length) {
+          await deleteDoc(oldDoc.ref);
+        }
+      }
+
+      for (let i = 0; i < chunks.length; i++) {
+        await setDoc(doc(chunksCol, String(i)), {
+          index: i,
+          rowsJson: JSON.stringify(chunks[i])
+        });
+      }
+
+      await setDoc(emailsRef, {
         emailMapJson: JSON.stringify(emailMap)
       });
+
+      const fullMeta = {
+        ...meta,
+        adminPin: finalPin,
+        totalChunks: chunks.length
+      };
       await setDoc(metaRef, fullMeta);
       return true;
     };
