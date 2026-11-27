@@ -166,7 +166,9 @@
                 <option value="1ER DEPARTAMENTAL">1er Departamental</option>
                 <option value="1ER PERIODO POLIVIRTUAL">1er periodo Polivirtual</option>
                 <option value="2DO DEPARTAMENTAL">2do Departamental</option>
+                <option value="2DO PERIODO POLIVIRTUAL">2do periodo Polivirtual</option>
                 <option value="3ER DEPARTAMENTAL">3er Departamental</option>
+                <option value="3ER PERIODO POLIVIRTUAL">3er periodo Polivirtual</option>
                 <option value="EXTRAORDINARIO">Extraordinario</option>
               </select>
             </div>
@@ -585,8 +587,8 @@
         </button>
       </div>
       <div class="p-6 space-y-3 text-sm text-slate-700">
-        <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> y la <strong>Evaluación</strong> (1er Departamental, 1er periodo Polivirtual, 2do Departamental, 3er Departamental o Extraordinario) en la barra de filtros.</p>
-        <p><strong>2. Modalidad No Escolarizada en 1er periodo:</strong> Las actas de modalidad No Escolarizada que correspondan al 1er periodo se muestran como <strong>1er periodo Polivirtual</strong>.</p>
+        <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> y la <strong>Evaluación</strong> (departamentales, periodos Polivirtual o Extraordinario) en la barra de filtros.</p>
+        <p><strong>2. Modalidad No Escolarizada en Polivirtual:</strong> Las actas de modalidad No Escolarizada correspondientes al 1er, 2do o 3er periodo se muestran como <strong>1er periodo Polivirtual</strong>, <strong>2do periodo Polivirtual</strong> y <strong>3er periodo Polivirtual</strong>.</p>
         <p><strong>3. Extraordinario sin Electivas:</strong> Las materias denominadas <em>Electiva</em> o <em>Electivas</em> se excluyen automáticamente de Extraordinario.</p>
         <p><strong>4. Captura al 100 % sin cerrar acta:</strong> Cuando todos los alumnos inscritos ya están calificados pero el acta aún no figura como confirmada, se muestra en <strong>Capturada al 100 % sin cerrar acta</strong> en verde claro y no suma en pendientes.</p>
       </div>
@@ -834,23 +836,31 @@
       return s || 'SIN JEFATURA';
     }
 
-    // Cambio 1: Si es modalidad No Escolarizada y 1er periodo, normaliza a '1ER PERIODO POLIVIRTUAL'
+    // Equivalencia en modalidad No Escolarizada para 1er, 2do y 3er periodo => Polivirtual
     function normalizeEvaluacionLabel(raw, modalidad = '') {
       const s = String(raw || '').trim().toUpperCase().replace(/\s+/g, ' ');
       const mod = String(modalidad || '').trim().toUpperCase();
       if (!s) return 'SIN EVALUACIÓN';
 
-      if (
-        s.includes('POLIVIRTUAL') ||
-        (mod === 'NO ESCOLARIZADA' && (s.includes('1ER') || s.includes('PRIMER') || s.includes('PERIODO 1') || s.includes('1ER PERIODO')))
-      ) {
+      const esNoEscolarizada = mod === 'NO ESCOLARIZADA';
+
+      if (s.includes('POLIVIRTUAL')) {
+        if (s.includes('2DO') || s.includes('SEGUNDO')) return '2DO PERIODO POLIVIRTUAL';
+        if (s.includes('3ER') || s.includes('TERCER')) return '3ER PERIODO POLIVIRTUAL';
         return '1ER PERIODO POLIVIRTUAL';
       }
 
-      if (s.includes('1ER') || s.includes('PRIMER')) return '1ER DEPARTAMENTAL';
-      if (s.includes('2DO') || s.includes('SEGUNDO')) return '2DO DEPARTAMENTAL';
-      if (s.includes('3ER') || s.includes('TERCER')) return '3ER DEPARTAMENTAL';
+      if (s.includes('1ER') || s.includes('PRIMER') || s.includes('1ER PERIODO')) {
+        return esNoEscolarizada ? '1ER PERIODO POLIVIRTUAL' : '1ER DEPARTAMENTAL';
+      }
+      if (s.includes('2DO') || s.includes('SEGUNDO') || s.includes('2DO PERIODO')) {
+        return esNoEscolarizada ? '2DO PERIODO POLIVIRTUAL' : '2DO DEPARTAMENTAL';
+      }
+      if (s.includes('3ER') || s.includes('TERCER') || s.includes('3ER PERIODO')) {
+        return esNoEscolarizada ? '3ER PERIODO POLIVIRTUAL' : '3ER DEPARTAMENTAL';
+      }
       if (s.includes('EXTRA')) return 'EXTRAORDINARIO';
+
       return s;
     }
 
@@ -859,13 +869,15 @@
         '1ER DEPARTAMENTAL': '1er Departamental',
         '1ER PERIODO POLIVIRTUAL': '1er periodo Polivirtual',
         '2DO DEPARTAMENTAL': '2do Departamental',
+        '2DO PERIODO POLIVIRTUAL': '2do periodo Polivirtual',
         '3ER DEPARTAMENTAL': '3er Departamental',
+        '3ER PERIODO POLIVIRTUAL': '3er periodo Polivirtual',
         'EXTRAORDINARIO': 'Extraordinario'
       };
       return map[normEval] || (rawEval ? String(rawEval).trim() : '—');
     }
 
-    // Cambio 2: Si es Extraordinario y la materia se llama Electiva o Electivas, se excluye
+    // Si es Extraordinario y la materia se llama Electiva o Electivas, se excluye
     function isElectivaEnExtraordinario(record) {
       if (!record) return false;
       const evNorm = record.evaluacionNorm || normalizeEvaluacionLabel(record.evaluacion, record.modalidad);
@@ -1278,7 +1290,9 @@
         '1ER DEPARTAMENTAL',
         '1ER PERIODO POLIVIRTUAL',
         '2DO DEPARTAMENTAL',
+        '2DO PERIODO POLIVIRTUAL',
         '3ER DEPARTAMENTAL',
+        '3ER PERIODO POLIVIRTUAL',
         'EXTRAORDINARIO'
       ];
       const presentEvals = [...new Set(allRecords.map(r => r.evaluacionNorm).filter(Boolean))];
