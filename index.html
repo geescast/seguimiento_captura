@@ -164,6 +164,7 @@
               <select id="filterEvaluacion" onchange="applyFilters()" class="w-full rounded-xl border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-ipn focus:outline-none">
                 <option value="ALL">Todas las Evaluaciones</option>
                 <option value="1ER DEPARTAMENTAL">1er Departamental</option>
+                <option value="1ER PERIODO POLIVIRTUAL">1er periodo Polivirtual</option>
                 <option value="2DO DEPARTAMENTAL">2do Departamental</option>
                 <option value="3ER DEPARTAMENTAL">3er Departamental</option>
                 <option value="EXTRAORDINARIO">Extraordinario</option>
@@ -462,11 +463,11 @@
         <div id="dropZone"
           onclick="document.getElementById('excelFileInput').click()"
           class="border-2 border-dashed border-slate-300 hover:border-ipn rounded-2xl p-8 sm:p-10 text-center cursor-pointer transition bg-slate-50/60 hover:bg-rose-50/30">
-          <input id="excelFileInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleFileUpload(event)" />
+          <input id="excelFileInput" type="file" accept=".xlsx,.xls,.xlsm,.csv" class="hidden" onchange="handleFileUpload(event)" />
           <div class="w-14 h-14 rounded-2xl bg-ipn/10 text-ipn flex items-center justify-center mx-auto mb-3 text-2xl">
             <i class="fa-solid fa-file-excel"></i>
           </div>
-          <h3 class="text-base font-bold text-slate-800">Haz clic aquí o arrastra tu archivo Excel (.xlsx)</h3>
+          <h3 class="text-base font-bold text-slate-800">Haz clic aquí o arrastra tu archivo Excel (.xlsx / .xlsm)</h3>
           <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
             Detecta automáticamente las hojas <strong>origen</strong> y <strong>CORREOS</strong> (columnas <strong>RFC</strong>, <strong>NOMBRE</strong> y <strong>CorreoDocente</strong>).
           </p>
@@ -584,10 +585,10 @@
         </button>
       </div>
       <div class="p-6 space-y-3 text-sm text-slate-700">
-        <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> y la <strong>Evaluación</strong> (1er, 2do, 3er Departamental o Extraordinario) en la barra de filtros para revisar el avance.</p>
-        <p><strong>2. Vistas disponibles:</strong> Alterna entre <strong>Por Docente</strong> (para desplegar sus grupos y enviar recordatorio), <strong>Por Jefatura</strong> (comparativa general) y <strong>Detalle de Actas</strong>.</p>
-        <p><strong>3. Captura al 100 % sin cerrar acta:</strong> Cuando todos los alumnos inscritos ya están calificados pero el acta aún no figura como confirmada, se muestra en <strong>Capturada al 100 % sin cerrar acta</strong> en verde claro y no se contabiliza como pendiente para el docente, ya que Gestión Escolar puede cerrarla.</p>
-        <p><strong>4. Actualización del corte:</strong> Gestión Escolar actualiza los registros desde la pestaña <strong>Actualizar Origen</strong> sin necesidad de modificar el código de la página.</p>
+        <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> y la <strong>Evaluación</strong> (1er Departamental, 1er periodo Polivirtual, 2do Departamental, 3er Departamental o Extraordinario) en la barra de filtros.</p>
+        <p><strong>2. Modalidad No Escolarizada en 1er periodo:</strong> Las actas de modalidad No Escolarizada que correspondan al 1er periodo se muestran como <strong>1er periodo Polivirtual</strong>.</p>
+        <p><strong>3. Extraordinario sin Electivas:</strong> Las materias denominadas <em>Electiva</em> o <em>Electivas</em> se excluyen automáticamente de Extraordinario.</p>
+        <p><strong>4. Captura al 100 % sin cerrar acta:</strong> Cuando todos los alumnos inscritos ya están calificados pero el acta aún no figura como confirmada, se muestra en <strong>Capturada al 100 % sin cerrar acta</strong> en verde claro y no suma en pendientes.</p>
       </div>
       <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 text-right">
         <button onclick="closeHelpModal()" class="btn-ipn px-4 py-2 rounded-xl text-xs font-bold">Entendido</button>
@@ -833,9 +834,19 @@
       return s || 'SIN JEFATURA';
     }
 
-    function normalizeEvaluacionLabel(raw) {
+    // Cambio 1: Si es modalidad No Escolarizada y 1er periodo, normaliza a '1ER PERIODO POLIVIRTUAL'
+    function normalizeEvaluacionLabel(raw, modalidad = '') {
       const s = String(raw || '').trim().toUpperCase().replace(/\s+/g, ' ');
+      const mod = String(modalidad || '').trim().toUpperCase();
       if (!s) return 'SIN EVALUACIÓN';
+
+      if (
+        s.includes('POLIVIRTUAL') ||
+        (mod === 'NO ESCOLARIZADA' && (s.includes('1ER') || s.includes('PRIMER') || s.includes('PERIODO 1') || s.includes('1ER PERIODO')))
+      ) {
+        return '1ER PERIODO POLIVIRTUAL';
+      }
+
       if (s.includes('1ER') || s.includes('PRIMER')) return '1ER DEPARTAMENTAL';
       if (s.includes('2DO') || s.includes('SEGUNDO')) return '2DO DEPARTAMENTAL';
       if (s.includes('3ER') || s.includes('TERCER')) return '3ER DEPARTAMENTAL';
@@ -846,11 +857,27 @@
     function formatEvaluacionDisplay(normEval, rawEval = '') {
       const map = {
         '1ER DEPARTAMENTAL': '1er Departamental',
+        '1ER PERIODO POLIVIRTUAL': '1er periodo Polivirtual',
         '2DO DEPARTAMENTAL': '2do Departamental',
         '3ER DEPARTAMENTAL': '3er Departamental',
         'EXTRAORDINARIO': 'Extraordinario'
       };
       return map[normEval] || (rawEval ? String(rawEval).trim() : '—');
+    }
+
+    // Cambio 2: Si es Extraordinario y la materia se llama Electiva o Electivas, se excluye
+    function isElectivaEnExtraordinario(record) {
+      if (!record) return false;
+      const evNorm = record.evaluacionNorm || normalizeEvaluacionLabel(record.evaluacion, record.modalidad);
+      if (evNorm !== 'EXTRAORDINARIO') return false;
+
+      const matClean = String(record.materia || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .trim();
+
+      return /\bELECTIVAS?\b/.test(matClean);
     }
 
     function normalizeStatus(raw) {
@@ -1023,13 +1050,13 @@
         const secuencia = String(r['Secuencia'] || r['SECUENCIA'] || '').trim().toUpperCase();
         const cveMateria = String(r['Cve_Materia'] || r['CVE_MATERIA'] || '').trim().toUpperCase();
         const materia = String(r['Materia'] || r['MATERIA'] || '').trim();
+        const modalidad = detectModalidadFromSecuencia(secuencia);
         const rawEvaluacion = String(r['Evaluacion'] || r['EVALUACION'] || '').trim();
-        const evaluacionNorm = normalizeEvaluacionLabel(rawEvaluacion);
+        const evaluacionNorm = normalizeEvaluacionLabel(rawEvaluacion, modalidad);
         const evaluacion = formatEvaluacionDisplay(evaluacionNorm, rawEvaluacion);
         const estatus = normalizeStatus(r['Estatus_acta'] || r['ESTATUS_ACTA']);
         const rawJefatura = r['Jefatura'] || r['JEFATURA'] || r['Carrera'] || r['CARRERA'] || '';
         const jefatura = cleanJefaturaLabel(rawJefatura);
-        const modalidad = detectModalidadFromSecuencia(secuencia);
 
         let semestre = String(r['SEMESTRE'] || r['Semestre'] || '').trim();
         if (!semestre && secuencia.length >= 1 && /\d/.test(secuencia.charAt(0))) {
@@ -1041,7 +1068,7 @@
         const calificados = Number(r['Calificados'] || 0) || 0;
         const pendientes = Number(r['Pendientes'] ?? Math.max(0, inscritos - calificados)) || 0;
 
-        cleanRows.push({
+        const item = {
           periodo: String(r['Periodo_escolar'] || '').trim(),
           evaluacion,
           evaluacionNorm,
@@ -1059,7 +1086,11 @@
           inscritos,
           calificados,
           pendientes
-        });
+        };
+
+        if (!isElectivaEnExtraordinario(item)) {
+          cleanRows.push(item);
+        }
       });
 
       return cleanRows;
@@ -1122,7 +1153,7 @@
           summary.textContent = `Archivo: ${file.name} • ${rows.length} actas detectadas • ${matchedDocCount} de ${uniqueDocs.size} docentes vinculados con correo.`;
         } catch (err) {
           console.error(err);
-          alert('Error al leer el archivo Excel. Verifica que sea un formato .xlsx o .xls válido.');
+          alert('Error al leer el archivo Excel. Verifica que sea un formato .xlsx, .xlsm o .xls válido.');
         }
       };
       reader.readAsArrayBuffer(file);
@@ -1184,14 +1215,19 @@
     };
 
     window.applyLoadedDataset = function(rows, emailMap, meta) {
-      allRecords = (rows || []).map(r => {
-        const normEval = r.evaluacionNorm || normalizeEvaluacionLabel(r.evaluacion);
-        return {
-          ...r,
-          evaluacionNorm: normEval,
-          evaluacion: r.evaluacion || formatEvaluacionDisplay(normEval)
-        };
-      });
+      allRecords = (rows || [])
+        .map(r => {
+          const mod = r.modalidad || detectModalidadFromSecuencia(r.secuencia);
+          const normEval = normalizeEvaluacionLabel(r.evaluacion || r.evaluacionNorm, mod);
+          return {
+            ...r,
+            modalidad: mod,
+            evaluacionNorm: normEval,
+            evaluacion: formatEvaluacionDisplay(normEval, r.evaluacion)
+          };
+        })
+        .filter(r => !isElectivaEnExtraordinario(r));
+
       directoryEmails = emailMap || { byRfc: {}, byName: {}, byTokenKey: {}, count: 0 };
 
       document.getElementById('emptyDataNotice').classList.add('hidden');
@@ -1238,7 +1274,13 @@
         jefaturas.map(j => `<option value="${escapeHtml(j)}">${escapeHtml(j)}</option>`).join('');
       if (jefaturas.includes(currentJef)) jefSelect.value = currentJef;
 
-      const preferredOrder = ['1ER DEPARTAMENTAL', '2DO DEPARTAMENTAL', '3ER DEPARTAMENTAL', 'EXTRAORDINARIO'];
+      const preferredOrder = [
+        '1ER DEPARTAMENTAL',
+        '1ER PERIODO POLIVIRTUAL',
+        '2DO DEPARTAMENTAL',
+        '3ER DEPARTAMENTAL',
+        'EXTRAORDINARIO'
+      ];
       const presentEvals = [...new Set(allRecords.map(r => r.evaluacionNorm).filter(Boolean))];
       const orderedEvals = [
         ...preferredOrder.filter(e => presentEvals.includes(e)),
@@ -1263,6 +1305,7 @@
       const q = document.getElementById('filterSearch').value.trim().toUpperCase();
 
       filteredRecords = allRecords.filter(r => {
+        if (isElectivaEnExtraordinario(r)) return false;
         if (jef !== 'ALL' && r.jefatura !== jef) return false;
         if (ev !== 'ALL' && r.evaluacionNorm !== ev) return false;
         if (mod !== 'ALL' && r.modalidad !== mod) return false;
