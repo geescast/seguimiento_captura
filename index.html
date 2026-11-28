@@ -158,28 +158,21 @@
               </select>
             </div>
 
-            <!-- Filtro Evaluación -->
+            <!-- Filtro Modalidad -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Modalidad</label>
+              <select id="filterModalidad" onchange="handleModalidadChange()" class="w-full rounded-xl border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-ipn focus:outline-none">
+                <option value="ALL">Todas las Modalidades</option>
+                <option value="ESCOLARIZADA">Escolarizada</option>
+                <option value="NO ESCOLARIZADA">No Escolarizada</option>
+              </select>
+            </div>
+
+            <!-- Filtro Evaluación (dinámico según Modalidad) -->
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Evaluación</label>
               <select id="filterEvaluacion" onchange="applyFilters()" class="w-full rounded-xl border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-ipn focus:outline-none">
                 <option value="ALL">Todas las Evaluaciones</option>
-                <option value="1ER DEPARTAMENTAL">1er Departamental</option>
-                <option value="1ER PERIODO POLIVIRTUAL">1er periodo Polivirtual</option>
-                <option value="2DO DEPARTAMENTAL">2do Departamental</option>
-                <option value="2DO PERIODO POLIVIRTUAL">2do periodo Polivirtual</option>
-                <option value="3ER DEPARTAMENTAL">3er Departamental</option>
-                <option value="3ER PERIODO POLIVIRTUAL">3er periodo Polivirtual</option>
-                <option value="EXTRAORDINARIO">Extraordinario</option>
-              </select>
-            </div>
-
-            <!-- Filtro Modalidad -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Modalidad</label>
-              <select id="filterModalidad" onchange="applyFilters()" class="w-full rounded-xl border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-ipn focus:outline-none">
-                <option value="ALL">Todas las Modalidades</option>
-                <option value="ESCOLARIZADA">Escolarizada</option>
-                <option value="NO ESCOLARIZADA">No Escolarizada</option>
               </select>
             </div>
 
@@ -412,8 +405,8 @@
                 <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-bold">
                   <tr>
                     <th class="px-3 py-3 text-left">Jefatura</th>
-                    <th class="px-3 py-3 text-left">Evaluación</th>
                     <th class="px-3 py-3 text-left">Modalidad</th>
+                    <th class="px-3 py-3 text-left">Evaluación</th>
                     <th class="px-3 py-3 text-center">Sem.</th>
                     <th class="px-3 py-3 text-left">Secuencia</th>
                     <th class="px-3 py-3 text-left">Materia</th>
@@ -587,8 +580,8 @@
         </button>
       </div>
       <div class="p-6 space-y-3 text-sm text-slate-700">
-        <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong> y la <strong>Evaluación</strong> (departamentales, periodos Polivirtual o Extraordinario) en la barra de filtros.</p>
-        <p><strong>2. Modalidad No Escolarizada en Polivirtual:</strong> Las actas de modalidad No Escolarizada correspondientes al 1er, 2do o 3er periodo se muestran como <strong>1er periodo Polivirtual</strong>, <strong>2do periodo Polivirtual</strong> y <strong>3er periodo Polivirtual</strong>.</p>
+        <p><strong>1. Consulta para Jefes de Carrera:</strong> Selecciona tu <strong>Jefatura</strong>, la <strong>Modalidad</strong> y la <strong>Evaluación</strong> en la barra de filtros.</p>
+        <p><strong>2. Filtro dinámico por Modalidad:</strong> Al elegir <em>No Escolarizada</em> se activan los periodos Polivirtual (1er, 2do y 3er periodo Polivirtual) y Extraordinario; al elegir <em>Escolarizada</em> se muestran las evaluaciones departamentales y Extraordinario.</p>
         <p><strong>3. Extraordinario sin Electivas:</strong> Las materias denominadas <em>Electiva</em> o <em>Electivas</em> se excluyen automáticamente de Extraordinario.</p>
         <p><strong>4. Captura al 100 % sin cerrar acta:</strong> Cuando todos los alumnos inscritos ya están calificados pero el acta aún no figura como confirmada, se muestra en <strong>Capturada al 100 % sin cerrar acta</strong> en verde claro y no suma en pendientes.</p>
       </div>
@@ -845,18 +838,33 @@
       const esNoEscolarizada = mod === 'NO ESCOLARIZADA';
 
       if (s.includes('POLIVIRTUAL')) {
-        if (s.includes('2DO') || s.includes('SEGUNDO')) return '2DO PERIODO POLIVIRTUAL';
-        if (s.includes('3ER') || s.includes('TERCER')) return '3ER PERIODO POLIVIRTUAL';
+        if (s.includes('2DO') || s.includes('SEGUNDO') || s.includes('2DO PERIODO')) return '2DO PERIODO POLIVIRTUAL';
+        if (s.includes('3ER') || s.includes('TERCER') || s.includes('3ER PERIODO')) return '3ER PERIODO POLIVIRTUAL';
         return '1ER PERIODO POLIVIRTUAL';
       }
 
-      if (s.includes('1ER') || s.includes('PRIMER') || s.includes('1ER PERIODO')) {
+      if (
+        s.includes('1ER') ||
+        s.includes('PRIMER') ||
+        s.includes('1ER PERIODO') ||
+        (esNoEscolarizada && (s === '1' || s === '1°' || s === '1º'))
+      ) {
         return esNoEscolarizada ? '1ER PERIODO POLIVIRTUAL' : '1ER DEPARTAMENTAL';
       }
-      if (s.includes('2DO') || s.includes('SEGUNDO') || s.includes('2DO PERIODO')) {
+      if (
+        s.includes('2DO') ||
+        s.includes('SEGUNDO') ||
+        s.includes('2DO PERIODO') ||
+        (esNoEscolarizada && (s === '2' || s === '2°' || s === '2º'))
+      ) {
         return esNoEscolarizada ? '2DO PERIODO POLIVIRTUAL' : '2DO DEPARTAMENTAL';
       }
-      if (s.includes('3ER') || s.includes('TERCER') || s.includes('3ER PERIODO')) {
+      if (
+        s.includes('3ER') ||
+        s.includes('TERCER') ||
+        s.includes('3ER PERIODO') ||
+        (esNoEscolarizada && (s === '3' || s === '3°' || s === '3º'))
+      ) {
         return esNoEscolarizada ? '3ER PERIODO POLIVIRTUAL' : '3ER DEPARTAMENTAL';
       }
       if (s.includes('EXTRA')) return 'EXTRAORDINARIO';
@@ -1272,21 +1280,45 @@
       document.getElementById('dashboardActiveContainer').classList.add('hidden');
     };
 
-    function populateDynamicFilters() {
-      const jefSelect = document.getElementById('filterJefatura');
-      const evalSelect = document.getElementById('filterEvaluacion');
-      const semSelect = document.getElementById('filterSemestre');
+    function getEvaluacionesDisponiblesPorModalidad(mod) {
+      const presentEvals = new Set(
+        allRecords
+          .filter(r => !isElectivaEnExtraordinario(r))
+          .filter(r => mod === 'ALL' || r.modalidad === mod)
+          .map(r => r.evaluacionNorm)
+          .filter(Boolean)
+      );
 
-      const currentJef = jefSelect.value;
-      const currentEval = evalSelect.value;
-      const currentSem = semSelect.value;
+      if (mod === 'NO ESCOLARIZADA') {
+        const poliOrder = [
+          '1ER PERIODO POLIVIRTUAL',
+          '2DO PERIODO POLIVIRTUAL',
+          '3ER PERIODO POLIVIRTUAL',
+          'EXTRAORDINARIO'
+        ];
+        const basePoli = ['1ER PERIODO POLIVIRTUAL', '2DO PERIODO POLIVIRTUAL', '3ER PERIODO POLIVIRTUAL'];
+        const extras = [...presentEvals].filter(e => !poliOrder.includes(e)).sort();
+        return [
+          ...poliOrder.filter(e => presentEvals.has(e) || basePoli.includes(e)),
+          ...extras
+        ];
+      }
 
-      const jefaturas = [...new Set(allRecords.map(r => r.jefatura))].sort();
-      jefSelect.innerHTML = '<option value="ALL">Todas las Jefaturas</option>' +
-        jefaturas.map(j => `<option value="${escapeHtml(j)}">${escapeHtml(j)}</option>`).join('');
-      if (jefaturas.includes(currentJef)) jefSelect.value = currentJef;
+      if (mod === 'ESCOLARIZADA') {
+        const ordOrder = [
+          '1ER DEPARTAMENTAL',
+          '2DO DEPARTAMENTAL',
+          '3ER DEPARTAMENTAL',
+          'EXTRAORDINARIO'
+        ];
+        const extras = [...presentEvals].filter(e => !ordOrder.includes(e) && !e.includes('POLIVIRTUAL')).sort();
+        return [
+          ...ordOrder.filter(e => presentEvals.has(e)),
+          ...extras
+        ];
+      }
 
-      const preferredOrder = [
+      const allOrder = [
         '1ER DEPARTAMENTAL',
         '1ER PERIODO POLIVIRTUAL',
         '2DO DEPARTAMENTAL',
@@ -1295,14 +1327,47 @@
         '3ER PERIODO POLIVIRTUAL',
         'EXTRAORDINARIO'
       ];
-      const presentEvals = [...new Set(allRecords.map(r => r.evaluacionNorm).filter(Boolean))];
-      const orderedEvals = [
-        ...preferredOrder.filter(e => presentEvals.includes(e)),
-        ...presentEvals.filter(e => !preferredOrder.includes(e)).sort()
+      const extras = [...presentEvals].filter(e => !allOrder.includes(e)).sort();
+      return [
+        ...allOrder.filter(e => presentEvals.has(e) || e.includes('POLIVIRTUAL')),
+        ...extras
       ];
+    }
+
+    function syncEvaluacionSelectOptions(preserveSelection = true) {
+      const mod = document.getElementById('filterModalidad').value;
+      const evalSelect = document.getElementById('filterEvaluacion');
+      const prevValue = preserveSelection ? evalSelect.value : 'ALL';
+      const options = getEvaluacionesDisponiblesPorModalidad(mod);
+
       evalSelect.innerHTML = '<option value="ALL">Todas las Evaluaciones</option>' +
-        orderedEvals.map(ev => `<option value="${escapeHtml(ev)}">${escapeHtml(formatEvaluacionDisplay(ev))}</option>`).join('');
-      if (orderedEvals.includes(currentEval)) evalSelect.value = currentEval;
+        options.map(ev => `<option value="${escapeHtml(ev)}">${escapeHtml(formatEvaluacionDisplay(ev))}</option>`).join('');
+
+      if (preserveSelection && options.includes(prevValue)) {
+        evalSelect.value = prevValue;
+      } else {
+        evalSelect.value = 'ALL';
+      }
+    }
+
+    function handleModalidadChange() {
+      syncEvaluacionSelectOptions(true);
+      applyFilters();
+    }
+
+    function populateDynamicFilters() {
+      const jefSelect = document.getElementById('filterJefatura');
+      const semSelect = document.getElementById('filterSemestre');
+
+      const currentJef = jefSelect.value;
+      const currentSem = semSelect.value;
+
+      const jefaturas = [...new Set(allRecords.map(r => r.jefatura))].sort();
+      jefSelect.innerHTML = '<option value="ALL">Todas las Jefaturas</option>' +
+        jefaturas.map(j => `<option value="${escapeHtml(j)}">${escapeHtml(j)}</option>`).join('');
+      if (jefaturas.includes(currentJef)) jefSelect.value = currentJef;
+
+      syncEvaluacionSelectOptions(true);
 
       const semestres = [...new Set(allRecords.map(r => r.semestre))].sort((a, b) => parseInt(a) - parseInt(b));
       semSelect.innerHTML = '<option value="ALL">Todos los Semestres</option>' +
@@ -1312,8 +1377,8 @@
 
     function applyFilters() {
       const jef = document.getElementById('filterJefatura').value;
-      const ev = document.getElementById('filterEvaluacion').value;
       const mod = document.getElementById('filterModalidad').value;
+      const ev = document.getElementById('filterEvaluacion').value;
       const sem = document.getElementById('filterSemestre').value;
       const est = document.getElementById('filterEstatus').value;
       const q = document.getElementById('filterSearch').value.trim().toUpperCase();
@@ -1321,8 +1386,8 @@
       filteredRecords = allRecords.filter(r => {
         if (isElectivaEnExtraordinario(r)) return false;
         if (jef !== 'ALL' && r.jefatura !== jef) return false;
-        if (ev !== 'ALL' && r.evaluacionNorm !== ev) return false;
         if (mod !== 'ALL' && r.modalidad !== mod) return false;
+        if (ev !== 'ALL' && r.evaluacionNorm !== ev) return false;
         if (sem !== 'ALL' && r.semestre !== sem) return false;
         if (est !== 'ALL') {
           if (est === 'PENDIENTES_ALL') {
@@ -1354,8 +1419,8 @@
 
     function resetFilters() {
       document.getElementById('filterJefatura').value = 'ALL';
-      document.getElementById('filterEvaluacion').value = 'ALL';
       document.getElementById('filterModalidad').value = 'ALL';
+      syncEvaluacionSelectOptions(false);
       document.getElementById('filterSemestre').value = 'ALL';
       document.getElementById('filterEstatus').value = 'ALL';
       document.getElementById('filterSearch').value = '';
@@ -1567,9 +1632,9 @@
           <tr class="border-t border-slate-100 text-xs">
             <td class="py-2 px-3 font-semibold text-slate-700">${escapeHtml(a.secuencia)}</td>
             <td class="py-2 px-3">${escapeHtml(a.cveMateria)} - ${escapeHtml(a.materia)}</td>
+            <td class="py-2 px-3">${escapeHtml(a.modalidad)}</td>
             <td class="py-2 px-3">${escapeHtml(a.evaluacion)}</td>
             <td class="py-2 px-3">${escapeHtml(a.jefatura)}</td>
-            <td class="py-2 px-3">${escapeHtml(a.modalidad)}</td>
             <td class="py-2 px-3">${escapeHtml(a.fechaLimite)}</td>
             <td class="py-2 px-3">${renderStatusBadge(a.estatus, a)}</td>
             <td class="py-2 px-3 text-center font-semibold">${a.calificados}/${a.inscritos}</td>
@@ -1618,9 +1683,9 @@
                     <tr>
                       <th class="py-2 px-3 text-left">Secuencia</th>
                       <th class="py-2 px-3 text-left">Unidad de Aprendizaje</th>
+                      <th class="py-2 px-3 text-left">Modalidad</th>
                       <th class="py-2 px-3 text-left">Evaluación</th>
                       <th class="py-2 px-3 text-left">Jefatura</th>
-                      <th class="py-2 px-3 text-left">Modalidad</th>
                       <th class="py-2 px-3 text-left">Límite SAES</th>
                       <th class="py-2 px-3 text-left">Estatus</th>
                       <th class="py-2 px-3 text-center">Calif./Insc.</th>
@@ -1738,8 +1803,8 @@
       tbody.innerHTML = slice.map(r => `
         <tr class="hover:bg-slate-50">
           <td class="px-3 py-2.5 font-medium text-slate-700">${escapeHtml(r.jefatura)}</td>
-          <td class="px-3 py-2.5 text-xs font-semibold text-slate-700">${escapeHtml(r.evaluacion)}</td>
           <td class="px-3 py-2.5 text-xs">${escapeHtml(r.modalidad)}</td>
+          <td class="px-3 py-2.5 text-xs font-semibold text-slate-700">${escapeHtml(r.evaluacion)}</td>
           <td class="px-3 py-2.5 text-center">${escapeHtml(r.semestre)}</td>
           <td class="px-3 py-2.5 font-bold text-slate-800">${escapeHtml(r.secuencia)}</td>
           <td class="px-3 py-2.5 text-slate-700">${escapeHtml(r.cveMateria)} - ${escapeHtml(r.materia)}</td>
